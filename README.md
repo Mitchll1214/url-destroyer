@@ -20,7 +20,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/Mitchll1214/link-destroyer.git
+git clone https://github.com/your-username/link-destroyer.git
 cd link-destroyer
 ```
 

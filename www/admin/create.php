@@ -15,6 +15,21 @@ $defaultExpiry  = (int)($db->query("SELECT value FROM settings WHERE key='defaul
 $createdLinks = [];
 $error = '';
 
+// Handle copy_from: pre-load config from existing link
+$copyConfig = null;
+$copyId = (int)($_GET['copy_from'] ?? 0);
+if ($copyId > 0) {
+    $src = $db->prepare("SELECT target_content, campaign_name FROM links WHERE id = :id");
+    $src->execute([':id' => $copyId]);
+    $srcRow = $src->fetch();
+    if ($srcRow && !empty(trim($srcRow['target_content']))) {
+        $decoded = json_decode($srcRow['target_content'], true);
+        if (is_array($decoded) && ($decoded['type'] ?? '') === 'form_builder') {
+            $copyConfig = $srcRow['target_content'];
+        }
+    }
+}
+
 // Default form builder config
 $defaultFormConfig = json_encode([
     'type' => 'form_builder',
@@ -39,7 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $targetContent = $_POST['target_content'] ?? $defaultFormConfig;
     $maxAccesses = (int)($_POST['max_accesses'] ?? 1);
 
-    if ($count < 1 || $count > 500) {
+    if ($campaign === '') {
+        $error = '活动名称不能为空';
+    } elseif ($count < 1 || $count > 500) {
         $error = '数量必须在 1 ~ 500 之间';
     } elseif ($timeout < 10) {
         $error = '访问后超时不能少于 10 秒';
@@ -92,7 +109,7 @@ adminHeader('创建链接', 'create');
     <form method="post" id="createForm">
         <div class="form-group">
             <label>活动名称 (用于后台标记)</label>
-            <input type="text" name="campaign_name" placeholder="例如：2024用户调研" maxlength="200">
+            <input type="text" name="campaign_name" placeholder="例如：2024用户调研" maxlength="200" required>
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -102,18 +119,18 @@ adminHeader('创建链接', 'create');
             </div>
             <div class="form-group">
                 <label>最大访问次数 (默认 1 = 打开即失效)</label>
-                <input type="number" name="max_accesses" value="1" min="1" max="100">
+                <input type="number" name="max_accesses" value="1" min="1" max="100" required>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
                 <label>访问后超时 (秒)</label>
-                <input type="number" name="access_timeout" value="<?= $defaultTimeout ?>" min="10">
+                <input type="number" name="access_timeout" value="<?= $defaultTimeout ?>" min="10" required>
                 <span class="text-muted">首次访问后 <?= round($defaultTimeout/60,1) ?> 分钟失效</span>
             </div>
             <div class="form-group">
                 <label>未打开自动过期 (小时)</label>
-                <input type="number" name="absolute_expiry_hours" value="<?= $defaultExpiry ?>" min="1">
+                <input type="number" name="absolute_expiry_hours" value="<?= $defaultExpiry ?>" min="1" required>
                 <span class="text-muted">创建后超过此时间未访问则自动失效</span>
             </div>
         </div>
@@ -122,7 +139,7 @@ adminHeader('创建链接', 'create');
         <input type="hidden" name="target_content" id="targetContentInput" value="<?= htmlspecialchars($defaultFormConfig) ?>">
 
         <!-- Tab: visual builder / advanced -->
-        <div style="margin-bottom:12px;">
+        <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button type="button" class="btn btn-sm btn-primary tab-btn" data-tab="visual">🎨 可视化构建器</button>
             <button type="button" class="btn btn-sm btn-outline tab-btn" data-tab="advanced">💻 高级模式 (PHP代码)</button>
         </div>
@@ -213,7 +230,7 @@ adminHeader('创建链接', 'create');
 
 <script>
 // ── Field management ──
-let fields = <?= $defaultFormConfig ?>;
+let fields = <?= $copyConfig ?: $defaultFormConfig ?>;
 
 function buildFieldData() {
     return Array.from(document.querySelectorAll('#fieldsContainer .field-editor')).map(el => {
