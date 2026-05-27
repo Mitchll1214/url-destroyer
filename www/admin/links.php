@@ -75,6 +75,7 @@ adminHeader('链接列表', 'links');
         <div class="form-group" style="margin:0;"><label style="font-size:11px;">至</label><input type="date" name="date_to" value="<?= htmlspecialchars($dateTo) ?>" style="width:140px;padding:6px 10px;font-size:12px;"></div>
         <button type="submit" class="btn btn-sm btn-primary" style="height:32px;">🔍 查询</button>
         <a href="links.php" class="btn btn-sm btn-outline" style="height:32px;">重置</a>
+        <a href="export.php?<?= http_build_query(array_filter(['status'=>$statusFilter, 'campaign'=>$searchCampaign, 'date_from'=>$dateFrom, 'date_to'=>$dateTo])) ?>" class="btn btn-sm btn-primary" style="height:32px;margin-left:auto;background:#27ae60;">📥 导出CSV</a>
     </form>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <div>
