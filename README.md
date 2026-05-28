@@ -20,7 +20,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/Mitchll1214/link-destroyer.git
+git clone https://github.com/your-username/link-destroyer.git
 cd link-destroyer
 ```
 
@@ -41,7 +41,7 @@ docker-compose up -d --build
 
 ```
 管理后台: http://localhost:8087/admin/
-默认密码: 你在第2步设置的密码，默认密码admin123
+默认密码: 你在第2步设置的密码
 ```
 
 ## 📁 项目结构
@@ -92,10 +92,6 @@ docker-compose up -d --build
    - 设置字段类型、标签、是否必填、默认值
    - 右侧实时预览效果
 4. 点击「生成链接」→ 复制生成的 URL 分发给用户
-<img width="1920" height="918" alt="image" src="https://github.com/user-attachments/assets/3f5c9508-e5a0-40b8-a675-7ed87c5cb04a" />
-<img width="1920" height="2817" alt="image" src="https://github.com/user-attachments/assets/c5e735ef-3edf-44d2-846c-85da53ef3588" />
-<img width="1920" height="918" alt="image" src="https://github.com/user-attachments/assets/d7181005-0351-49fb-ad88-fb08efc4c88b" />
-<img width="1920" height="1028" alt="image" src="https://github.com/user-attachments/assets/b33027ae-3f4a-4640-9eca-6935b58d3267" />
 
 ### 用户访问
 

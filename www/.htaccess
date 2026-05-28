@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Pretty URL for public access: /access/{token}
+RewriteRule ^access/([a-zA-Z0-9_-]+)$ access.php?token=$1 [L,QSA]
+
+# Admin path: if you change ADMIN_PATH in config.php, add a rewrite here, e.g.:
+# RewriteRule ^my-secret-panel/(.*)$ admin/$1 [L,QSA]
+
+# Block direct access to data directory
+RewriteRule ^data/ - [F,L]

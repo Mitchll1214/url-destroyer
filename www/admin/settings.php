@@ -10,6 +10,24 @@ $db = getDB();
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Password change (handled first, returns its own message)
+    if (isset($_POST['change_password'])) {
+        $oldPass = $_POST['old_password'] ?? '';
+        $newPass = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
+        $currentPw = $db->query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn() ?: ADMIN_PASSWORD;
+        if ($oldPass !== $currentPw) {
+            $message = '❌ 当前密码错误';
+        } elseif (strlen($newPass) < 4) {
+            $message = '❌ 新密码至少4位';
+        } elseif ($newPass !== $confirm) {
+            $message = '❌ 两次输入的新密码不一致';
+        } else {
+            $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', :v)")->execute([':v' => $newPass]);
+            $message = '✅ 密码已修改，下次登录生效';
+        }
+    }
+
     // Update default timeout
     if (isset($_POST['default_access_timeout'])) {
         $timeout = max(10, (int)$_POST['default_access_timeout']);
@@ -24,7 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            ->execute([':v' => $expiry]);
     }
 
-    $message = '✅ 设置已保存';
+    if (!isset($_POST['change_password']) && !isset($message)) {
+        $message = '✅ 设置已保存';
+    }
 }
 
 // Load current values
@@ -61,12 +81,19 @@ adminHeader('系统设置', 'settings');
 </div>
 
 <div class="card">
-    <div class="card-header">🔑 管理员密码</div>
-    <p class="text-muted mb-16">当前密码定义在 <code>www/config.php</code> 的 <code>ADMIN_PASSWORD</code> 常量中。修改密码请编辑该文件后重启容器。</p>
-    <div class="form-group">
-        <label>当前密码</label>
-        <input type="text" value="<?= htmlspecialchars(ADMIN_PASSWORD) ?>" readonly style="background:#f5f5f5;">
-    </div>
+    <div class="card-header">🔑 修改管理员密码</div>
+    <p class="text-muted mb-16">修改后即时生效。默认初始密码：<code><?= htmlspecialchars(ADMIN_PASSWORD) ?></code></p>
+    <form method="post">
+        <input type="hidden" name="change_password" value="1">
+        <div class="form-row">
+            <div class="form-group"><label>当前密码</label><input type="password" name="old_password" required></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>新密码</label><input type="password" name="new_password" required minlength="4"></div>
+            <div class="form-group"><label>确认新密码</label><input type="password" name="confirm_password" required minlength="4"></div>
+        </div>
+        <button type="submit" class="btn btn-primary">🔒 修改密码</button>
+    </form>
 </div>
 
 <div class="card">

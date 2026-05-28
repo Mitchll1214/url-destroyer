@@ -8,10 +8,16 @@ require_once __DIR__ . '/../db.php';
 // ── Authentication ──
 session_start();
 
+function getAdminPassword(): string {
+    $db = getDB();
+    $stored = $db->query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn();
+    return $stored ?: ADMIN_PASSWORD;
+}
+
 function requireLogin(): void {
     if (!empty($_SESSION['admin_logged_in'])) return;
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-        if ($_POST['password'] === ADMIN_PASSWORD) {
+        if ($_POST['password'] === getAdminPassword()) {
             $_SESSION['admin_logged_in'] = true;
             return;
         }
@@ -66,7 +72,7 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
     </head>
     <body>
     <div class="admin-wrapper">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="logo">🔗 链接<span>销毁</span></div>
             <nav>
                 <a href="index.php"        class="<?= $activeNav==='dashboard' ? 'active' : '' ?>">📊 仪表盘</a>
@@ -74,11 +80,13 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
                 <a href="links.php"        class="<?= $activeNav==='links'    ? 'active' : '' ?>">📋 链接列表</a>
                 <a href="settings.php"     class="<?= $activeNav==='settings' ? 'active' : '' ?>">⚙️ 设置</a>
             </nav>
-            <div style="position:absolute;bottom:20px;left:20px;font-size:12px;color:#666;">
-                <a href="?logout=1" style="color:#888;text-decoration:none;">🚪 退出</a>
-            </div>
         </aside>
         <main class="main">
+        <div class="topbar">
+            <button class="sidebar-toggle" id="sidebarToggle" title="折叠菜单">☰</button>
+            <span style="flex:1;"></span>
+            <a href="?logout=1" class="logout-btn">🚪 退出</a>
+        </div>
     <?php
 }
 
@@ -86,6 +94,19 @@ function adminFooter(): void {
     ?>
         </main>
     </div>
+    <script>
+    (function(){
+        var sidebar = document.getElementById('sidebar');
+        var toggle = document.getElementById('sidebarToggle');
+        var wrapper = document.querySelector('.admin-wrapper');
+        var saved = localStorage.getItem('sidebar_collapsed');
+        if (saved === '1') { wrapper.classList.add('sidebar-collapsed'); }
+        toggle.addEventListener('click', function(){
+            wrapper.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebar_collapsed', wrapper.classList.contains('sidebar-collapsed') ? '1' : '0');
+        });
+    })();
+    </script>
     </body></html>
     <?php
 }
