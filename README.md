@@ -41,7 +41,7 @@ docker-compose up -d --build
 
 ```
 管理后台: http://localhost:8087/admin/
-默认密码: 你在第2步设置的密码
+默认密码: 你在第2步设置的密码，默认密码admin123
 ```
 
 ## 📁 项目结构
