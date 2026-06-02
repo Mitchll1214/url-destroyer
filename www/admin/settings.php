@@ -86,11 +86,11 @@ adminHeader('系统设置', 'settings');
     <form method="post">
         <input type="hidden" name="change_password" value="1">
         <div class="form-row">
-            <div class="form-group"><label>当前密码</label><input type="password" name="old_password" required></div>
+            <div class="form-group"><label>当前密码</label><input type="text" name="old_password" required></div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>新密码</label><input type="password" name="new_password" required minlength="4"></div>
-            <div class="form-group"><label>确认新密码</label><input type="password" name="confirm_password" required minlength="4"></div>
+            <div class="form-group"><label>新密码</label><input type="text" name="new_password" required minlength="4"></div>
+            <div class="form-group"><label>确认新密码</label><input type="text" name="confirm_password" required minlength="4"></div>
         </div>
         <button type="submit" class="btn btn-primary">🔒 修改密码</button>
     </form>

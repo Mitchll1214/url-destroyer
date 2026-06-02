@@ -16,7 +16,26 @@ if (isset($_POST['delete_id'])) {
     exit;
 }
 
+// Handle edit
+if (isset($_POST['edit_id'])) {
+    $editId = (int)$_POST['edit_id'];
+    $newStatus = $_POST['edit_status'] ?? '';
+    $newMax = (int)($_POST['edit_max_accesses'] ?? 0);
+    if (in_array($newStatus, ['active', 'opened', 'expired']) && $newMax >= 1) {
+        $upd = $db->prepare("UPDATE links SET status=:st, max_accesses=:mx WHERE id=:id");
+        $upd->execute([':st'=>$newStatus, ':mx'=>$newMax, ':id'=>$editId]);
+        // If reactivating, reset expiry so the link works again
+        if ($newStatus === 'active') {
+            $db->prepare("UPDATE links SET first_accessed_at=NULL, expires_at=NULL, access_count=0 WHERE id=:id")
+               ->execute([':id'=>$editId]);
+        }
+    }
+    header('Location: links.php?edited=1');
+    exit;
+}
+
 $deleted = isset($_GET['deleted']);
+$edited  = isset($_GET['edited']);
 
 // Filters
 $statusFilter = $_GET['status'] ?? '';
@@ -66,6 +85,9 @@ adminHeader('链接列表', 'links');
 <?php if ($deleted): ?>
     <div class="alert alert-success">✅ 链接已删除</div>
 <?php endif; ?>
+<?php if ($edited): ?>
+    <div class="alert alert-success">✅ 链接已更新</div>
+<?php endif; ?>
 
 <div class="card">
     <form method="get" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee;">
@@ -111,9 +133,30 @@ adminHeader('链接列表', 'links');
                 <?php if (!empty(trim($row['target_content']))): ?>
                 <a href="create.php?copy_from=<?= $row['id'] ?>" class="btn btn-sm btn-outline" title="基于此配置创建新链接">📋</a>
                 <?php endif; ?>
+                <button type="button" class="btn btn-sm btn-outline edit-toggle" data-id="<?= $row['id'] ?>">✏️</button>
                 <form method="post" style="display:inline" onsubmit="return confirm('确定删除此链接及所有访问记录？此操作不可撤销。')">
                     <input type="hidden" name="delete_id" value="<?= $row['id'] ?>">
                     <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                </form>
+            </td>
+        </tr>
+        <!-- Inline edit row (hidden by default) -->
+        <tr class="edit-row" id="edit-row-<?= $row['id'] ?>" style="display:none;">
+            <td colspan="10" style="background:#f8f9fa;padding:12px 16px;">
+                <form method="post" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <input type="hidden" name="edit_id" value="<?= $row['id'] ?>">
+                    <div class="form-group" style="margin:0;"><label style="font-size:11px;">状态</label>
+                        <select name="edit_status" style="padding:6px 8px;font-size:12px;">
+                            <option value="active"  <?= $row['status']==='active'  ? 'selected' : '' ?>>活跃</option>
+                            <option value="opened"  <?= $row['status']==='opened'  ? 'selected' : '' ?>>已打开</option>
+                            <option value="expired" <?= $row['status']==='expired' ? 'selected' : '' ?>>已过期</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;"><label style="font-size:11px;">最大访问次数</label>
+                        <input type="number" name="edit_max_accesses" value="<?= $row['max_accesses'] ?>" min="1" max="999" style="width:70px;padding:6px 8px;font-size:12px;">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">💾 保存</button>
+                    <button type="button" class="btn btn-sm btn-outline edit-cancel" data-id="<?= $row['id'] ?>">取消</button>
                 </form>
             </td>
         </tr>
@@ -135,4 +178,20 @@ adminHeader('链接列表', 'links');
     <?php endif; ?>
 </div>
 
+<script>
+document.querySelectorAll('.edit-toggle').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        const row = document.getElementById('edit-row-' + id);
+        // Close all other edit rows
+        document.querySelectorAll('.edit-row').forEach(r => { if (r !== row) r.style.display = 'none'; });
+        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    });
+});
+document.querySelectorAll('.edit-cancel').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('edit-row-' + this.dataset.id).style.display = 'none';
+    });
+});
+</script>
 <?php adminFooter(); ?>
