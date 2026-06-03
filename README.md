@@ -1,35 +1,61 @@
-# 🔗 动态网址销毁系统 (Link Destroyer)
+# 🔗 url-destroyer
 
-一个基于 PHP + SQLite 的**一次性链接管理系统**，支持可视化表单构建、定时销毁、访问追踪，Docker 一键部署。
+基于 PHP + SQLite 的**一次性链接管理系统**。可视化表单构建、定时销毁、访问追踪、CSV 导出，Docker 一键部署。
 
-## ✨ 核心功能
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PHP](https://img.shields.io/badge/php-8.2-777bb4.svg)](https://php.net)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ed.svg)](https://docker.com)
 
+## ✨ 功能
+
+### 链接管理
 | 功能 | 说明 |
 |---|---|
-| ⏱ **定时销毁** | 链接打开后 N 分钟自动失效（默认 10 分钟，可后台配置） |
-| 🕐 **自动过期** | 创建后超过 N 小时未打开则自动失效（默认 24 小时） |
-| 🎨 **可视化表单构建器** | 拖拽式添加字段，支持文本/邮箱/电话/数字/日期/下拉框/多行文本 |
-| 📊 **访问追踪** | 每次访问记录 IP、UA、Referer、提交的表单数据 |
-| 🔢 **批量生成** | 一次创建 1~500 个独立链接 |
-| 👁 **管理后台** | 仪表盘统计、链接列表、访问详情、数据查看 |
-| 🐳 **Docker 部署** | 一条命令启动，SQLite 零配置 |
-| 📱 **响应式** | 管理后台和表单页面均适配移动端 |
+| ⏱ 定时销毁 | 首次打开后 N 分钟自动失效（默认 10 分钟，可配） |
+| 🕐 自动过期 | 创建后 N 小时未被访问自动失效（默认 24 小时） |
+| 🔢 批量生成 | 一次创建 1~500 个独立链接 |
+| 🔄 重新打开 | 已过期链接一键恢复（超绝对过期时间则永久失效） |
+| ⏹ 手动过期 | 随时将链接置为已过期 |
+| 🔍 搜索筛选 | 按活动名称（模糊）、日期范围、状态筛选 |
+| 📥 CSV 导出 | 按筛选条件导出已提交的表单数据 |
+
+### 表单构建器
+| 功能 | 说明 |
+|---|---|
+| 🎨 可视化编辑 | 拖拽式添加/删除字段，右侧实时预览 |
+| 📝 字段类型 | 文本、邮箱、电话、数字、日期、下拉框、多行文本 |
+| ⚙️ 字段属性 | 标签、必填、占位文字、默认值、下拉选项 |
+| 📋 配置复用 | 从已有链接一键复制表单设计到新链接 |
+| 📄 高级模式 | 切换到 PHP 代码模式，支持复杂逻辑 |
+
+### 管理后台
+| 功能 | 说明 |
+|---|---|
+| 📊 仪表盘 | 链接/访问统计概览 |
+| 📋 链接列表 | 状态筛选、搜索、编辑、删除、一键复制访问链接 |
+| 📈 访问详情 | 每次访问的 IP、UA、Referer、提交数据，表单预览 |
+| ⚙️ 系统设置 | 默认超时配置、在线修改密码（实时生效） |
+| 📱 响应式 | 桌面端侧边栏可折叠，移动端自动适配 |
+| 🎭 自定义路径 | 修改后台入口 URL 防扫描 |
 
 ## 🚀 快速开始
 
-### 1. 克隆项目
+### 1. 克隆
 
 ```bash
 git clone https://github.com/Mitchll1214/url-destroyer.git
 cd url-destroyer
 ```
 
-### 2. 修改管理员密码
+### 2. 修改初始密码
 
-```bash
-# 编辑 www/config.php，修改 ADMIN_PASSWORD
-sed -i "s/admin123/你的强密码/" www/config.php
+编辑 `www/config.php`：
+
+```php
+define('ADMIN_PASSWORD', '你的强密码');
 ```
+
+> 部署后也可在后台「设置」页面在线修改，无需重启。
 
 ### 3. 启动
 
@@ -41,33 +67,33 @@ docker-compose up -d --build
 
 ```
 管理后台: http://localhost:8087/admin/
-默认密码: 你在第2步设置的密码
 ```
 
 ## 📁 项目结构
 
 ```
-├── Dockerfile                  # PHP 8.2 + Apache + SQLite
+url-destroyer/
+├── Dockerfile                  # PHP 8.2 + Apache + SQLite（腾讯云 apt 源）
 ├── docker-compose.yml          # 端口 8087，数据持久化
 ├── docker-entrypoint.sh        # 容器启动权限修复
-├── data/                       # SQLite 数据库文件（挂载卷）
+├── data/                       # SQLite 数据库（挂载卷）
 ├── templates/
 │   └── default_form.php        # 默认表单模板（备用）
 └── www/
     ├── .htaccess               # URL 重写
-    ├── config.php              # 全局配置（密码、时区、路径）
-    ├── db.php                  # 数据库初始化 + PDO 连接
-    ├── index.php               # 根路径重定向
+    ├── config.php              # 密码、时区、ADMIN_PATH、BASE_URL
+    ├── db.php                  # SQLite 初始化 + PDO
+    ├── index.php               # → 重定向到后台
     ├── access.php              # 🔑 公开访问入口（核心引擎）
-    ├── assets/
-    │   └── style.css           # 管理后台样式
+    ├── assets/style.css        # 响应式样式
     └── admin/
-        ├── _lib.php            # 登录认证 + 布局
+        ├── _lib.php            # 登录认证 + 布局 + 侧边栏折叠
         ├── index.php           # 仪表盘
-        ├── create.php          # 创建链接 + 表单构建器
-        ├── links.php           # 链接列表管理
-        ├── stats.php           # 单链接访问详情
-        └── settings.php        # 全局超时设置
+        ├── create.php          # 可视化表单构建器 + 链接生成
+        ├── links.php           # 链接列表（搜索/筛选/编辑/删除）
+        ├── stats.php           # 访问详情 + 表单预览
+        ├── settings.php        # 超时默认值 + 在线改密
+        └── export.php          # CSV 数据导出
 ```
 
 ## 🛠 技术栈
@@ -77,51 +103,59 @@ docker-compose up -d --build
 | 语言 | PHP 8.2 |
 | Web 服务器 | Apache 2.4 + mod_rewrite |
 | 数据库 | SQLite 3 (WAL 模式) |
-| 容器化 | Docker + docker-compose |
-| 前端 | 原生 HTML/CSS/JavaScript（零依赖） |
+| 容器 | Docker + docker-compose |
+| 前端 | 原生 HTML/CSS/JS（零依赖） |
+| 时区 | Asia/Shanghai（北京时间） |
 
 ## 📋 使用流程
 
-### 管理员操作
+### 创建链接
 
-1. 登录后台 → 点击「创建链接」
-2. 填写活动名称，设置链接数量和过期策略
-3. 在**可视化构建器**中编辑表单：
-   - 设置表单标题、副标题
-   - 添加 / 删除字段
-   - 设置字段类型、标签、是否必填、默认值
-   - 右侧实时预览效果
-4. 点击「生成链接」→ 复制生成的 URL 分发给用户
+1. 登录后台 → **创建链接**
+2. 填写活动名称、数量、过期策略
+3. 在可视化构建器设计表单：
+   - 标题、副标题、提交按钮文字
+   - 添加字段、选择类型、设置标签和默认值
+   - 右侧实时预览
+4. 点击 **生成链接** → 复制 URL 分发给用户
 
-### 用户访问
+### 链接生命周期
 
-1. 用户打开链接 → 看到你设计的表单页面
-2. 填写并提交 → 数据自动记录到后台
-3. 链接在首次打开后开始计时，超时后自动失效
+```
+创建 (active) → 用户打开 (opened) → 提交表单 → 超时 (expired)
+                                          ↓
+                                    管理员可重新打开
+                                          ↓
+                              绝对过期后永久失效
+```
 
-## ⚙️ 配置说明
+### 数据导出
+
+链接列表页筛选条件后，点击 **📥 导出CSV**，下载包含所有表单提交数据的 CSV 文件（UTF-8 BOM，Excel 直接打开）。
+
+## ⚙️ 配置
 
 ### 自定义后台路径
 
-编辑 `www/config.php`：
+`www/config.php`：
 
 ```php
-define('ADMIN_PATH', 'my-secret-panel');  // 替换默认的 admin
+define('ADMIN_PATH', 'my-secret-panel');
 ```
 
-然后在 `www/.htaccess` 添加一条 rewrite：
+`www/.htaccess` 添加：
 
 ```apache
 RewriteRule ^my-secret-panel/(.*)$ admin/$1 [L,QSA]
 ```
 
-### 修改默认超时
+### 默认超时
 
-后台 → 设置 → 修改「首次访问后超时」和「未打开自动过期」。所有新建链接将使用此默认值（每个链接可单独覆盖）。
+后台 → 设置 → 修改默认值（每个链接创建时可单独覆盖）。
 
-### 手动指定域名
+### 反向代理 / 自定义域名
 
-如果反向代理未正确传递 Host 头，在 `www/config.php` 手动设置：
+`www/config.php`：
 
 ```php
 define('BASE_URL', 'https://your-domain.com');
@@ -129,48 +163,47 @@ define('BASE_URL', 'https://your-domain.com');
 
 ### 修改端口
 
-编辑 `docker-compose.yml`：
+`docker-compose.yml`：
 
 ```yaml
 ports:
   - "你的端口:80"
 ```
 
-## 🌐 国内服务器部署
+## 🌐 国内部署
 
-项目已适配国内网络环境：
+已适配腾讯云网络环境（apt 源 `mirrors.cloud.tencent.com`）：
 
 ```bash
-# 腾讯云 Docker 镜像加速
+# Docker 镜像加速
 sudo tee /etc/docker/daemon.json <<'EOF'
 { "registry-mirrors": ["https://mirror.ccs.tencentyun.com"] }
 EOF
 sudo systemctl daemon-reload && sudo systemctl restart docker
 
-# Dockerfile 内 apt 源已替换为腾讯云镜像，直接构建即可
 docker-compose build --no-cache && docker-compose up -d
 ```
 
-## 📊 数据库结构
+## 📊 数据库
 
-### links 表
+### links
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | id | INTEGER | 主键 |
-| token | TEXT | 唯一访问标识（32位 hex） |
+| token | TEXT | 32 位 hex 唯一标识 |
 | campaign_name | TEXT | 活动名称 |
-| target_content | TEXT | 目标页面内容（JSON 或 PHP） |
-| access_timeout | INTEGER | 首次访问后超时秒数 |
-| absolute_expiry_hours | INTEGER | 未打开自动过期小时数 |
+| target_content | TEXT | 表单 JSON 或 PHP 代码 |
+| access_timeout | INTEGER | 首次访问后超时（秒） |
+| absolute_expiry_hours | INTEGER | 创建后绝对过期（小时） |
 | max_accesses | INTEGER | 最大访问次数 |
 | access_count | INTEGER | 已访问次数 |
 | status | TEXT | active / opened / expired |
-| created_at | TEXT | 创建时间（北京时间） |
+| created_at | TEXT | 创建时间 |
 | first_accessed_at | TEXT | 首次访问时间 |
 | expires_at | TEXT | 过期时间 |
 
-### access_logs 表
+### access_logs
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -180,8 +213,8 @@ docker-compose build --no-cache && docker-compose up -d
 | user_agent | TEXT | 浏览器 UA |
 | referer | TEXT | 来源页面 |
 | form_data | TEXT | 提交的表单数据（JSON） |
-| accessed_at | TEXT | 访问时间（北京时间） |
+| accessed_at | TEXT | 访问时间 |
 
 ## 📄 License
 
-MIT
+MIT © [Mitchll1214](https://github.com/Mitchll1214)
