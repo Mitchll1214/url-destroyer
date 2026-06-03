@@ -93,6 +93,53 @@ adminHeader('访问统计 #' . $linkId, 'links');
     </table>
 </div>
 
+<!-- Form Preview -->
+<?php
+$cfg = null;
+$tc = $link['target_content'];
+if (!empty(trim($tc))) {
+    $decoded = json_decode($tc, true);
+    if (is_array($decoded) && ($decoded['type'] ?? '') === 'form_builder') {
+        $cfg = $decoded;
+    }
+}
+if ($cfg):
+?>
+<details class="card" style="margin-bottom:24px;">
+    <summary class="card-header" style="cursor:pointer;list-style:none;">👁 表单预览 <span style="font-size:11px;color:#888;">(点击展开)</span></summary>
+    <div style="display:flex;justify-content:center;">
+        <div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;padding:20px;max-width:420px;width:100%;">
+            <div style="background:#fff;border-radius:10px;padding:20px;">
+                <h3 style="text-align:center;color:#333;margin-bottom:4px;font-size:16px;"><?= htmlspecialchars($cfg['title'] ?? '') ?></h3>
+                <?php if (!empty($cfg['subtitle'])): ?>
+                <p style="text-align:center;color:#888;font-size:11px;margin-bottom:16px;"><?= htmlspecialchars($cfg['subtitle']) ?></p>
+                <?php endif; ?>
+                <?php foreach ($cfg['fields'] ?? [] as $f):
+                    $label = htmlspecialchars($f['label'] ?? $f['name'] ?? '');
+                    $type  = $f['type'] ?? 'text';
+                    $ph    = htmlspecialchars($f['placeholder'] ?? '');
+                    $dv    = htmlspecialchars($f['default_value'] ?? '');
+                    $req   = !empty($f['required']);
+                    $opts  = $f['options'] ?? [];
+                ?>
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:11px;font-weight:600;color:#444;"><?= $label ?><?= $req ? ' <span style="color:#e74c3c;">*</span>' : '' ?></label>
+                    <?php if ($type === 'textarea'): ?>
+                        <div style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:11px;min-height:40px;background:#fafafa;color:#999;"><?= $dv ?: $ph ?></div>
+                    <?php elseif ($type === 'select'): ?>
+                        <div style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:11px;background:#fafafa;color:#999;"><?= $ph ?: ($opts[0] ?? '请选择') ?></div>
+                    <?php else: ?>
+                        <div style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:11px;background:#fafafa;color:#999;"><?= $dv ?: $ph ?></div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+                <div style="width:100%;padding:8px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;text-align:center;">📤 <?= htmlspecialchars($cfg['submit_text'] ?? '提交') ?></div>
+            </div>
+        </div>
+    </div>
+</details>
+<?php endif; ?>
+
 <!-- Access Logs -->
 <div class="card">
     <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">

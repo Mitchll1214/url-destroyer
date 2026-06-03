@@ -20,8 +20,8 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/Mitchll1214/link-destroyer.git
-cd link-destroyer
+git clone https://github.com/Mitchll1214/url-destroyer.git
+cd url-destroyer
 ```
 
 ### 2. 修改管理员密码

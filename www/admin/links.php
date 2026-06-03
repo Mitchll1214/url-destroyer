@@ -16,20 +16,29 @@ if (isset($_POST['delete_id'])) {
     exit;
 }
 
-// Handle edit
-if (isset($_POST['edit_id'])) {
-    $editId = (int)$_POST['edit_id'];
-    $newStatus = $_POST['edit_status'] ?? '';
-    $newMax = (int)($_POST['edit_max_accesses'] ?? 0);
-    if (in_array($newStatus, ['active', 'opened', 'expired']) && $newMax >= 1) {
-        $upd = $db->prepare("UPDATE links SET status=:st, max_accesses=:mx WHERE id=:id");
-        $upd->execute([':st'=>$newStatus, ':mx'=>$newMax, ':id'=>$editId]);
-        // If reactivating, reset expiry so the link works again
-        if ($newStatus === 'active') {
-            $db->prepare("UPDATE links SET first_accessed_at=NULL, expires_at=NULL, access_count=0 WHERE id=:id")
-               ->execute([':id'=>$editId]);
-        }
+// Handle reactivate (expired → active) — only if not absolutely expired
+if (isset($_POST['reactivate_id'])) {
+    $rid = (int)$_POST['reactivate_id'];
+    $link = $db->prepare("SELECT created_at, absolute_expiry_hours FROM links WHERE id=:id");
+    $link->execute([':id'=>$rid]);
+    $link = $link->fetch();
+    if ($link && time() <= strtotime($link['created_at']) + (int)$link['absolute_expiry_hours'] * 3600) {
+        $db->prepare("UPDATE links SET status='active', first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=1 WHERE id=:id")
+           ->execute([':id'=>$rid]);
+        $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'reactivate', '链接被重新打开', datetime('now','localtime'))")
+           ->execute([':id'=>$rid]);
     }
+    header('Location: links.php?edited=1');
+    exit;
+}
+
+// Handle force expire (non-expired → expired)
+if (isset($_POST['expire_id'])) {
+    $eid = (int)$_POST['expire_id'];
+    $db->prepare("UPDATE links SET status='expired', expires_at=datetime('now','localtime') WHERE id=:id")
+       ->execute([':id'=>$eid]);
+    $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'force_expire', '管理员置为已过期', datetime('now','localtime'))")
+       ->execute([':id'=>$eid]);
     header('Location: links.php?edited=1');
     exit;
 }
@@ -117,11 +126,18 @@ adminHeader('链接列表', 'links');
         <?php foreach ($links as $row):
             $statusLabel = ['active'=>'活跃','opened'=>'已打开','expired'=>'已过期'][$row['status']] ?? $row['status'];
             $statusClass = 'badge-' . $row['status'];
+            // Check if absolutely expired (beyond absolute_expiry_hours from created_at)
+            $absExpiryHours = (int)$row['absolute_expiry_hours'];
+            $absDeadline = strtotime($row['created_at']) + $absExpiryHours * 3600;
+            $isAbsolutelyExpired = (time() > $absDeadline);
         ?>
         <tr>
             <td>#<?= $row['id'] ?></td>
             <td><?= htmlspecialchars($row['campaign_name'] ?: '-') ?></td>
-            <td><code style="font-size:11px;"><?= htmlspecialchars(substr($row['token'], 0, 16)) ?>...</code></td>
+            <td>
+                <code style="font-size:11px;"><?= htmlspecialchars(substr($row['token'], 0, 16)) ?>...</code>
+                <button type="button" class="copy-link-btn" data-url="<?= htmlspecialchars(BASE_URL . '/access.php?token=' . $row['token']) ?>" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0 4px;" title="复制访问链接">📋</button>
+            </td>
             <td><span class="badge <?= $statusClass ?>"><?= $statusLabel ?></span></td>
             <td><?= $row['access_count'] ?>/<?= $row['max_accesses'] ?></td>
             <td><?= $row['access_timeout'] ?></td>
@@ -133,30 +149,24 @@ adminHeader('链接列表', 'links');
                 <?php if (!empty(trim($row['target_content']))): ?>
                 <a href="create.php?copy_from=<?= $row['id'] ?>" class="btn btn-sm btn-outline" title="基于此配置创建新链接">📋</a>
                 <?php endif; ?>
-                <button type="button" class="btn btn-sm btn-outline edit-toggle" data-id="<?= $row['id'] ?>">✏️</button>
+                <?php if ($row['status'] === 'expired'): ?>
+                    <?php if ($isAbsolutelyExpired): ?>
+                    <span class="badge" style="background:#eee;color:#999;font-size:10px;">已永久过期</span>
+                    <?php else: ?>
+                    <form method="post" style="display:inline" onsubmit="return confirm('确定重新打开此链接？最大访问次数将重置为1。')">
+                        <input type="hidden" name="reactivate_id" value="<?= $row['id'] ?>">
+                        <button type="submit" class="btn btn-sm btn-primary" style="background:#27ae60;">🔄 重新打开</button>
+                    </form>
+                    <?php endif; ?>
+                <?php else: ?>
+                <form method="post" style="display:inline" onsubmit="return confirm('确定将此链接置为已过期？')">
+                    <input type="hidden" name="expire_id" value="<?= $row['id'] ?>">
+                    <button type="submit" class="btn btn-sm btn-outline" style="color:#e94560;border-color:#e94560;">⏹ 置已过期</button>
+                </form>
+                <?php endif; ?>
                 <form method="post" style="display:inline" onsubmit="return confirm('确定删除此链接及所有访问记录？此操作不可撤销。')">
                     <input type="hidden" name="delete_id" value="<?= $row['id'] ?>">
                     <button type="submit" class="btn btn-sm btn-danger">删除</button>
-                </form>
-            </td>
-        </tr>
-        <!-- Inline edit row (hidden by default) -->
-        <tr class="edit-row" id="edit-row-<?= $row['id'] ?>" style="display:none;">
-            <td colspan="10" style="background:#f8f9fa;padding:12px 16px;">
-                <form method="post" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <input type="hidden" name="edit_id" value="<?= $row['id'] ?>">
-                    <div class="form-group" style="margin:0;"><label style="font-size:11px;">状态</label>
-                        <select name="edit_status" style="padding:6px 8px;font-size:12px;">
-                            <option value="active"  <?= $row['status']==='active'  ? 'selected' : '' ?>>活跃</option>
-                            <option value="opened"  <?= $row['status']==='opened'  ? 'selected' : '' ?>>已打开</option>
-                            <option value="expired" <?= $row['status']==='expired' ? 'selected' : '' ?>>已过期</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin:0;"><label style="font-size:11px;">最大访问次数</label>
-                        <input type="number" name="edit_max_accesses" value="<?= $row['max_accesses'] ?>" min="1" max="999" style="width:70px;padding:6px 8px;font-size:12px;">
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-primary">💾 保存</button>
-                    <button type="button" class="btn btn-sm btn-outline edit-cancel" data-id="<?= $row['id'] ?>">取消</button>
                 </form>
             </td>
         </tr>
@@ -179,18 +189,23 @@ adminHeader('链接列表', 'links');
 </div>
 
 <script>
-document.querySelectorAll('.edit-toggle').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const id = this.dataset.id;
-        const row = document.getElementById('edit-row-' + id);
-        // Close all other edit rows
-        document.querySelectorAll('.edit-row').forEach(r => { if (r !== row) r.style.display = 'none'; });
-        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-    });
-});
-document.querySelectorAll('.edit-cancel').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.getElementById('edit-row-' + this.dataset.id).style.display = 'none';
+// Copy link to clipboard
+document.querySelectorAll('.copy-link-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        const url = this.getAttribute('data-url');
+        if (!url) return;
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch(ex) {}
+        document.body.removeChild(ta);
+        const orig = this.textContent;
+        this.textContent = '✅';
+        setTimeout(() => { this.textContent = orig; }, 1500);
     });
 });
 </script>
