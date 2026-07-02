@@ -60,6 +60,15 @@ function initSchema(PDO $pdo): void {
         )
     ");
 
+    // Login rate limiting
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS login_attempts (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip          TEXT    NOT NULL,
+            attempted_at TEXT   NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+    ");
+
     // Insert default settings if not present
     $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
     $stmt->execute(['default_access_timeout', DEFAULT_ACCESS_TIMEOUT]);

@@ -141,7 +141,7 @@ adminHeader('创建链接', 'create');
         <!-- Tab: visual builder / advanced -->
         <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button type="button" class="btn btn-sm btn-primary tab-btn" data-tab="visual">🎨 可视化构建器</button>
-            <button type="button" class="btn btn-sm btn-outline tab-btn" data-tab="advanced">💻 高级模式 (PHP代码)</button>
+            <button type="button" class="btn btn-sm btn-outline tab-btn" data-tab="advanced">💻 高级模式 (HTML代码)</button>
         </div>
 
         <!-- === VISUAL BUILDER TAB === -->
@@ -189,9 +189,9 @@ adminHeader('创建链接', 'create');
         <!-- === ADVANCED TAB === -->
         <div id="tab-advanced" style="display:none;">
             <div class="form-group">
-                <label>目标页面内容 (PHP/HTML)</label>
-                <textarea name="target_content_legacy" id="advancedContent" placeholder="粘贴 PHP/HTML 代码..." style="min-height:200px;"></textarea>
-                <span class="text-muted">此模式直接执行 PHP 代码，适合需要复杂逻辑的场景。</span>
+                <label>目标页面内容 (HTML)</label>
+                <textarea name="target_content_legacy" id="advancedContent" placeholder="粘贴 HTML 代码..." style="min-height:200px;"></textarea>
+                <span class="text-muted">此模式仅按静态 HTML 输出；为防止远程代码执行，PHP 代码不会被执行。</span>
             </div>
         </div>
 

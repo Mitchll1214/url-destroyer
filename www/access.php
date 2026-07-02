@@ -112,22 +112,39 @@ if ($formConfig) {
     // ── Dynamic form builder rendering ──
     renderFormBuilder($formConfig, $token, $isPost);
 } else {
-    // ── Legacy PHP content eval ──
+    // ── Legacy static HTML rendering ──
+    // SECURITY: never execute stored content as PHP. Existing legacy PHP blocks are stripped
+    // before output so stored content cannot become remote code execution.
     if (empty(trim($content))) {
-        $templatePath = __DIR__ . '/../templates/default_form.php';
-        if (file_exists($templatePath)) {
-            $content = file_get_contents($templatePath);
-        } else {
-            $content = '<h2>表单页面</h2><p>管理员未配置目标页面内容。</p>';
-        }
+        renderDefaultForm($token, $isPost);
+    } else {
+        renderStaticHtmlContent($content);
     }
-    try {
-        ob_start();
-        eval('?>' . $content);
-        echo ob_get_clean();
-    } catch (Throwable $e) {
-        echo '<div style="color:red;padding:20px;">目标页面渲染错误: ' . htmlspecialchars($e->getMessage()) . '</div>';
-    }
+}
+
+// ── Helper: render static HTML safely without PHP execution ──
+function renderStaticHtmlContent(string $content): void {
+    $content = preg_replace('/<\?(?:php|=)?[\s\S]*?\?>/i', '', $content) ?? '';
+    header('Content-Type: text/html; charset=UTF-8');
+    echo $content;
+}
+
+// ── Helper: render fallback form ──
+function renderDefaultForm(string $token, bool $submitted): void {
+    renderFormBuilder([
+        'type' => 'form_builder',
+        'title' => '信息收集表',
+        'subtitle' => '请填写以下信息，提交后链接将自动失效',
+        'submit_text' => '提交',
+        'success_title' => '提交成功！',
+        'success_text' => '感谢您的参与，您的数据已记录。',
+        'fields' => [
+            ['name' => 'name',  'label' => '姓名',   'type' => 'text',     'required' => true,  'placeholder' => '请输入您的姓名', 'default_value' => ''],
+            ['name' => 'email', 'label' => '邮箱',   'type' => 'email',    'required' => true,  'placeholder' => 'example@mail.com', 'default_value' => ''],
+            ['name' => 'phone', 'label' => '手机号', 'type' => 'tel',      'required' => false, 'placeholder' => '请输入手机号', 'default_value' => ''],
+            ['name' => 'note',  'label' => '备注',   'type' => 'textarea', 'required' => false, 'placeholder' => '其他想说的话...', 'default_value' => ''],
+        ],
+    ], $token, $submitted);
 }
 
 // ── Helper: render form builder ──
