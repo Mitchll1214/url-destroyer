@@ -1,157 +1,183 @@
-﻿# 馃敆 url-destroyer
+﻿# 🔗 url-destroyer
 
-鍩轰簬 PHP + SQLite 鐨?*涓€娆℃€ч摼鎺ョ鐞嗙郴缁?*銆傚彲瑙嗗寲琛ㄥ崟鏋勫缓銆佸畾鏃堕攢姣併€佽闂拷韪€丆SV 瀵煎嚭锛孌ocker 涓€閿儴缃层€?
+基于 PHP + SQLite 的**一次性链接管理系统**。可视化表单构建、定时销毁、访问追踪、CSV 导出，Docker 一键部署。
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/php-8.2-777bb4.svg)](https://php.net)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ed.svg)](https://docker.com)
 
-## 鉁?鍔熻兘
+## ✨ 功能
 
-### 閾炬帴绠＄悊
-| 鍔熻兘 | 璇存槑 |
+### 链接管理
+| 功能 | 说明 |
 |---|---|
-| 鈴?瀹氭椂閿€姣?| 棣栨鎵撳紑鍚?N 鍒嗛挓鑷姩澶辨晥锛堥粯璁?10 鍒嗛挓锛屽彲閰嶏級 |
-| 馃晲 鑷姩杩囨湡 | 鍒涘缓鍚?N 灏忔椂鏈璁块棶鑷姩澶辨晥锛堥粯璁?24 灏忔椂锛?|
-| 馃敘 鎵归噺鐢熸垚 | 涓€娆″垱寤?1~500 涓嫭绔嬮摼鎺?|
-| 馃攧 閲嶆柊鎵撳紑 | 宸茶繃鏈熼摼鎺ヤ竴閿仮澶嶏紙瓒呯粷瀵硅繃鏈熸椂闂村垯姘镐箙澶辨晥锛?|
-| 鈴?鎵嬪姩杩囨湡 | 闅忔椂灏嗛摼鎺ョ疆涓哄凡杩囨湡 |
-| 馃攳 鎼滅储绛涢€?| 鎸夋椿鍔ㄥ悕绉帮紙妯＄硦锛夈€佹棩鏈熻寖鍥淬€佺姸鎬佺瓫閫?|
-| 馃摜 CSV 瀵煎嚭 | 鎸夌瓫閫夋潯浠跺鍑哄凡鎻愪氦鐨勮〃鍗曟暟鎹?|
+| ⏱ 定时销毁 | 首次打开后 N 分钟自动失效（默认 10 分钟，可配） |
+| 🕐 自动过期 | 创建后 N 小时未被访问自动失效（默认 24 小时） |
+| 🔢 批量生成 | 一次创建 1~500 个独立链接 |
+| 🔄 重新打开 | 已过期链接一键恢复（超绝对过期时间则永久失效） |
+| ⏹ 手动过期 | 随时将链接置为已过期 |
+| 🔍 搜索筛选 | 按活动名称（模糊）、日期范围、状态筛选 |
+| 📥 CSV 导出 | 按筛选条件导出已提交的表单数据 |
 
-### 琛ㄥ崟鏋勫缓鍣?| 鍔熻兘 | 璇存槑 |
+### 表单构建器
+| 功能 | 说明 |
 |---|---|
-| 馃帹 鍙鍖栫紪杈?| 鎷栨嫿寮忔坊鍔?鍒犻櫎瀛楁锛屽彸渚у疄鏃堕瑙?|
-| 馃摑 瀛楁绫诲瀷 | 鏂囨湰銆侀偖绠便€佺數璇濄€佹暟瀛椼€佹棩鏈熴€佷笅鎷夋銆佸琛屾枃鏈?|
-| 鈿欙笍 瀛楁灞炴€?| 鏍囩銆佸繀濉€佸崰浣嶆枃瀛椼€侀粯璁ゅ€笺€佷笅鎷夐€夐」 |
-| 馃搵 閰嶇疆澶嶇敤 | 浠庡凡鏈夐摼鎺ヤ竴閿鍒惰〃鍗曡璁″埌鏂伴摼鎺?|
-| 馃搫 楂樼骇妯″紡 | 鍒囨崲鍒?PHP 浠ｇ爜妯″紡锛屾敮鎸佸鏉傞€昏緫 |
+| 🎨 可视化编辑 | 拖拽式添加/删除字段，右侧实时预览 |
+| 📝 字段类型 | 文本、邮箱、电话、数字、日期、下拉框、多行文本 |
+| ⚙️ 字段属性 | 标签、必填、占位文字、默认值、下拉选项 |
+| 📋 配置复用 | 从已有链接一键复制表单设计到新链接 |
+| 📄 高级模式 | 切换到自定义 HTML 模式（PHP 代码不会执行，已做安全过滤） |
 
-### 绠＄悊鍚庡彴
-| 鍔熻兘 | 璇存槑 |
+### 管理后台
+| 功能 | 说明 |
 |---|---|
-| 馃搳 浠〃鐩?| 閾炬帴/璁块棶缁熻姒傝 |
-| 馃搵 閾炬帴鍒楄〃 | 鐘舵€佺瓫閫夈€佹悳绱€佺紪杈戙€佸垹闄ゃ€佷竴閿鍒惰闂摼鎺?|
-| 馃搱 璁块棶璇︽儏 | 姣忔璁块棶鐨?IP銆乁A銆丷eferer銆佹彁浜ゆ暟鎹紝琛ㄥ崟棰勮 |
-| 鈿欙笍 绯荤粺璁剧疆 | 榛樿瓒呮椂閰嶇疆銆佸湪绾夸慨鏀瑰瘑鐮侊紙瀹炴椂鐢熸晥锛?|
-| 馃摫 鍝嶅簲寮?| 妗岄潰绔晶杈规爮鍙姌鍙狅紝绉诲姩绔嚜鍔ㄩ€傞厤 |
-| 馃幁 鑷畾涔夎矾寰?| 淇敼鍚庡彴鍏ュ彛 URL 闃叉壂鎻?|
+| 📊 仪表盘 | 链接/访问统计概览 |
+| 📋 链接列表 | 状态筛选、搜索、编辑、删除、一键复制访问链接 |
+| 📈 访问详情 | 每次访问的 IP、UA、Referer、提交数据，表单预览 |
+| ⚙️ 系统设置 | 默认超时配置、在线修改密码（实时生效） |
+| 🔒 安全加固 | 登录速率限制（5 次/10 分钟锁定 60 秒）、PHP 标签过滤 |
+| 📱 响应式 | 桌面端侧边栏可折叠，移动端自动适配 |
+| 🎭 自定义路径 | 修改后台入口 URL 防扫描 |
 
-## 馃殌 蹇€熷紑濮?
-### 1. 鍏嬮殕
+## 🚀 快速开始
+
+### 1. 克隆
 
 ```bash
 git clone https://github.com/Mitchll1214/url-destroyer.git
 cd url-destroyer
 ```
 
-### 2. 淇敼鍒濆瀵嗙爜
+### 2. 修改初始密码
 
-缂栬緫 `www/config.php`锛?
+编辑 `www/config.php`：
+
 ```php
-define('ADMIN_PASSWORD', '浣犵殑寮哄瘑鐮?);
+define('ADMIN_PASSWORD', '你的强密码');
 ```
 
-> 閮ㄧ讲鍚庝篃鍙湪鍚庡彴銆岃缃€嶉〉闈㈠湪绾夸慨鏀癸紝鏃犻渶閲嶅惎锛岄粯璁ゅ瘑鐮乤dmin123銆?
-### 3. 鍚姩
+> 部署后也可在后台「设置」页面在线修改，无需重启，默认密码 admin123。
+
+### 3. 启动
 
 ```bash
 docker-compose up -d --build
 ```
 
-### 4. 璁块棶
+### 4. 访问
 
 ```
-绠＄悊鍚庡彴: http://localhost:8087/admin/
+管理后台: http://localhost:8087/admin/
 ```
 
-## 馃搧 椤圭洰缁撴瀯
+## 📁 项目结构
 
 ```
 url-destroyer/
-鈹溾攢鈹€ Dockerfile                  # PHP 8.2 + Apache + SQLite锛堣吘璁簯 apt 婧愶級
-鈹溾攢鈹€ docker-compose.yml          # 绔彛 8087锛屾暟鎹寔涔呭寲
-鈹溾攢鈹€ docker-entrypoint.sh        # 瀹瑰櫒鍚姩鏉冮檺淇
-鈹溾攢鈹€ data/                       # SQLite 鏁版嵁搴擄紙鎸傝浇鍗凤級
-鈹溾攢鈹€ templates/
-鈹?  鈹斺攢鈹€ default_form.php        # 榛樿琛ㄥ崟妯℃澘锛堝鐢級
-鈹斺攢鈹€ www/
-    鈹溾攢鈹€ .htaccess               # URL 閲嶅啓
-    鈹溾攢鈹€ config.php              # 瀵嗙爜銆佹椂鍖恒€丄DMIN_PATH銆丅ASE_URL
-    鈹溾攢鈹€ db.php                  # SQLite 鍒濆鍖?+ PDO
-    鈹溾攢鈹€ index.php               # 鈫?閲嶅畾鍚戝埌鍚庡彴
-    鈹溾攢鈹€ access.php              # 馃攽 鍏紑璁块棶鍏ュ彛锛堟牳蹇冨紩鎿庯級
-    鈹溾攢鈹€ assets/style.css        # 鍝嶅簲寮忔牱寮?    鈹斺攢鈹€ admin/
-        鈹溾攢鈹€ _lib.php            # 鐧诲綍璁よ瘉 + 甯冨眬 + 渚ц竟鏍忔姌鍙?        鈹溾攢鈹€ index.php           # 浠〃鐩?        鈹溾攢鈹€ create.php          # 鍙鍖栬〃鍗曟瀯寤哄櫒 + 閾炬帴鐢熸垚
-        鈹溾攢鈹€ links.php           # 閾炬帴鍒楄〃锛堟悳绱?绛涢€?缂栬緫/鍒犻櫎锛?        鈹溾攢鈹€ stats.php           # 璁块棶璇︽儏 + 琛ㄥ崟棰勮
-        鈹溾攢鈹€ settings.php        # 瓒呮椂榛樿鍊?+ 鍦ㄧ嚎鏀瑰瘑
-        鈹斺攢鈹€ export.php          # CSV 鏁版嵁瀵煎嚭
+├── Dockerfile                  # PHP 8.2 + Apache + SQLite（腾讯云 apt 源）
+├── docker-compose.yml          # 端口 8087，数据持久化
+├── docker-entrypoint.sh        # 容器启动权限修复
+├── data/                       # SQLite 数据库（挂载卷）
+├── templates/
+│   └── default_form.php        # 默认表单模板（备用）
+└── www/
+    ├── .htaccess               # URL 重写
+    ├── config.php              # 密码、时区、ADMIN_PATH、BASE_URL
+    ├── db.php                  # SQLite 初始化 + PDO
+    ├── index.php               # → 重定向到后台
+    ├── access.php              # 🔑 公开访问入口（核心引擎）
+    ├── assets/style.css        # 响应式样式
+    └── admin/
+        ├── _lib.php            # 登录认证 + 布局 + 速率限制
+        ├── index.php           # 仪表盘
+        ├── create.php          # 可视化表单构建器 + 链接生成
+        ├── links.php           # 链接列表（搜索/筛选/编辑/删除）
+        ├── stats.php           # 访问详情 + 表单预览
+        ├── settings.php        # 超时默认值 + 在线改密
+        └── export.php          # CSV 数据导出
 ```
 
-## 馃洜 鎶€鏈爤
+## 🛠 技术栈
 
-| 灞?| 鎶€鏈?|
+| 层 | 技术 |
 |---|---|
-| 璇█ | PHP 8.2 |
-| Web 鏈嶅姟鍣?| Apache 2.4 + mod_rewrite |
-| 鏁版嵁搴?| SQLite 3 (WAL 妯″紡) |
-| 瀹瑰櫒 | Docker + docker-compose |
-| 鍓嶇 | 鍘熺敓 HTML/CSS/JS锛堥浂渚濊禆锛?|
-| 鏃跺尯 | Asia/Shanghai锛堝寳浜椂闂达級 |
+| 语言 | PHP 8.2 |
+| Web 服务器 | Apache 2.4 + mod_rewrite |
+| 数据库 | SQLite 3 (WAL 模式) |
+| 容器 | Docker + docker-compose |
+| 前端 | 原生 HTML/CSS/JS（零依赖） |
+| 时区 | Asia/Shanghai（北京时间） |
 
-## 馃搵 浣跨敤娴佺▼
+## 📋 使用流程
 
-### 鍒涘缓閾炬帴
+### 创建链接
 
-1. 鐧诲綍鍚庡彴 鈫?**鍒涘缓閾炬帴**
-2. 濉啓娲诲姩鍚嶇О銆佹暟閲忋€佽繃鏈熺瓥鐣?3. 鍦ㄥ彲瑙嗗寲鏋勫缓鍣ㄨ璁¤〃鍗曪細
-   - 鏍囬銆佸壇鏍囬銆佹彁浜ゆ寜閽枃瀛?   - 娣诲姞瀛楁銆侀€夋嫨绫诲瀷銆佽缃爣绛惧拰榛樿鍊?   - 鍙充晶瀹炴椂棰勮
-4. 鐐瑰嚮 **鐢熸垚閾炬帴** 鈫?澶嶅埗 URL 鍒嗗彂缁欑敤鎴?
-### 閾炬帴鐢熷懡鍛ㄦ湡
+1. 登录后台 → **创建链接**
+2. 填写活动名称、数量、过期策略
+3. 在可视化构建器设计表单：
+   - 标题、副标题、提交按钮文字
+   - 添加字段、选择类型、设置标签和默认值
+   - 右侧实时预览
+4. 点击 **生成链接** → 复制 URL 分发给用户
+
+### 链接生命周期
 
 ```
-鍒涘缓 (active) 鈫?鐢ㄦ埛鎵撳紑 (opened) 鈫?鎻愪氦琛ㄥ崟 鈫?瓒呮椂 (expired)
-                                          鈫?                                    绠＄悊鍛樺彲閲嶆柊鎵撳紑
-                                          鈫?                              缁濆杩囨湡鍚庢案涔呭け鏁?```
+创建 (active) → 用户打开 (opened) → 提交表单 → 超时 (expired)
+                                          ↓
+                                    管理员可重新打开
+                                          ↓
+                              绝对过期后永久失效
+```
 
-### 鏁版嵁瀵煎嚭
+### 数据导出
 
-閾炬帴鍒楄〃椤电瓫閫夋潯浠跺悗锛岀偣鍑?**馃摜 瀵煎嚭CSV**锛屼笅杞藉寘鍚墍鏈夎〃鍗曟彁浜ゆ暟鎹殑 CSV 鏂囦欢锛圲TF-8 BOM锛孍xcel 鐩存帴鎵撳紑锛夈€?
-## 鈿欙笍 閰嶇疆
+链接列表页筛选条件后，点击 **📥 导出CSV**，下载包含所有表单提交数据的 CSV 文件（UTF-8 BOM，Excel 直接打开）。
 
-### 鑷畾涔夊悗鍙拌矾寰?
-`www/config.php`锛?
+## ⚙️ 配置
+
+### 自定义后台路径
+
+`www/config.php`：
+
 ```php
 define('ADMIN_PATH', 'my-secret-panel');
 ```
 
-`www/.htaccess` 娣诲姞锛?
+`www/.htaccess` 添加：
+
 ```apache
 RewriteRule ^my-secret-panel/(.*)$ admin/$1 [L,QSA]
 ```
 
-### 榛樿瓒呮椂
+### 默认超时
 
-鍚庡彴 鈫?璁剧疆 鈫?淇敼榛樿鍊硷紙姣忎釜閾炬帴鍒涘缓鏃跺彲鍗曠嫭瑕嗙洊锛夈€?
-### 鍙嶅悜浠ｇ悊 / 鑷畾涔夊煙鍚?
-`www/config.php`锛?
+后台 → 设置 → 修改默认值（每个链接创建时可单独覆盖）。
+
+### 反向代理 / 自定义域名
+
+`www/config.php`：
+
 ```php
 define('BASE_URL', 'https://your-domain.com');
 ```
 
-### 淇敼绔彛
+### 修改端口
 
-`docker-compose.yml`锛?
+`docker-compose.yml`：
+
 ```yaml
 ports:
-  - "浣犵殑绔彛:80"
+  - "你的端口:80"
 ```
 
-## 馃寪 鍥藉唴閮ㄧ讲
+## 🌐 国内部署
 
-宸查€傞厤鑵捐浜戠綉缁滅幆澧冿紙apt 婧?`mirrors.cloud.tencent.com`锛夛細
+已适配腾讯云网络环境（apt 源 `mirrors.cloud.tencent.com`）：
 
 ```bash
-# Docker 闀滃儚鍔犻€?sudo tee /etc/docker/daemon.json <<'EOF'
+# Docker 镜像加速
+sudo tee /etc/docker/daemon.json <<'EOF'
 { "registry-mirrors": ["https://mirror.ccs.tencentyun.com"] }
 EOF
 sudo systemctl daemon-reload && sudo systemctl restart docker
@@ -159,37 +185,45 @@ sudo systemctl daemon-reload && sudo systemctl restart docker
 docker-compose build --no-cache && docker-compose up -d
 ```
 
-## 馃搳 鏁版嵁搴?
+## 📊 数据库
+
 ### links
 
-| 瀛楁 | 绫诲瀷 | 璇存槑 |
+| 字段 | 类型 | 说明 |
 |---|---|---|
-| id | INTEGER | 涓婚敭 |
-| token | TEXT | 32 浣?hex 鍞竴鏍囪瘑 |
-| campaign_name | TEXT | 娲诲姩鍚嶇О |
-| target_content | TEXT | 琛ㄥ崟 JSON 鎴栭潤鎬?HTML 浠ｇ爜 |
-| access_timeout | INTEGER | 棣栨璁块棶鍚庤秴鏃讹紙绉掞級 |
-| absolute_expiry_hours | INTEGER | 鍒涘缓鍚庣粷瀵硅繃鏈燂紙灏忔椂锛?|
-| max_accesses | INTEGER | 鏈€澶ц闂鏁?|
-| access_count | INTEGER | 宸茶闂鏁?|
+| id | INTEGER | 主键 |
+| token | TEXT | 32 位 hex 唯一标识 |
+| campaign_name | TEXT | 活动名称 |
+| target_content | TEXT | 表单 JSON 或静态 HTML 代码 |
+| access_timeout | INTEGER | 首次访问后超时（秒） |
+| absolute_expiry_hours | INTEGER | 创建后绝对过期（小时） |
+| max_accesses | INTEGER | 最大访问次数 |
+| access_count | INTEGER | 已访问次数 |
 | status | TEXT | active / opened / expired |
-| created_at | TEXT | 鍒涘缓鏃堕棿 |
-| first_accessed_at | TEXT | 棣栨璁块棶鏃堕棿 |
-| expires_at | TEXT | 杩囨湡鏃堕棿 |
+| created_at | TEXT | 创建时间 |
+| first_accessed_at | TEXT | 首次访问时间 |
+| expires_at | TEXT | 过期时间 |
 
 ### access_logs
 
-| 瀛楁 | 绫诲瀷 | 璇存槑 |
+| 字段 | 类型 | 说明 |
 |---|---|---|
-| id | INTEGER | 涓婚敭 |
-| link_id | INTEGER | 澶栭敭 鈫?links.id |
-| ip | TEXT | 璁块棶鑰?IP |
-| user_agent | TEXT | 娴忚鍣?UA |
-| referer | TEXT | 鏉ユ簮椤甸潰 |
-| form_data | TEXT | 鎻愪氦鐨勮〃鍗曟暟鎹紙JSON锛?|
-| accessed_at | TEXT | 璁块棶鏃堕棿 |
+| id | INTEGER | 主键 |
+| link_id | INTEGER | 外键 → links.id |
+| ip | TEXT | 访问者 IP |
+| user_agent | TEXT | 浏览器 UA |
+| referer | TEXT | 来源页面 |
+| form_data | TEXT | 提交的表单数据（JSON） |
+| accessed_at | TEXT | 访问时间 |
 
-## 馃搫 License
+### login_attempts
 
-MIT 漏 [Mitchll1214](https://github.com/Mitchll1214)
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | INTEGER | 主键 |
+| ip | TEXT | 尝试登录的 IP |
+| attempted_at | TEXT | 尝试时间 |
 
+## 📄 License
+
+MIT © [Mitchll1214](https://github.com/Mitchll1214)
