@@ -136,7 +136,7 @@ adminHeader('链接列表', 'links');
             <td><?= htmlspecialchars($row['campaign_name'] ?: '-') ?></td>
             <td>
                 <code style="font-size:11px;"><?= htmlspecialchars(substr($row['token'], 0, 16)) ?>...</code>
-                <button type="button" class="copy-link-btn" data-url="<?= htmlspecialchars(BASE_URL . '/access.php?token=' . $row['token']) ?>" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0 4px;" title="复制访问链接">📋</button>
+                <button type="button" class="copy-link-btn" data-url="<?= htmlspecialchars(BASE_URL . '/access.php?token=' . $row['token']) ?>" data-campaign="<?= htmlspecialchars($row['campaign_name'] ?: '未命名') ?>" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0 4px;" title="复制访问链接">📋</button>
             </td>
             <td><span class="badge <?= $statusClass ?>"><?= $statusLabel ?></span></td>
             <td><?= $row['access_count'] ?>/<?= $row['max_accesses'] ?></td>
@@ -189,14 +189,16 @@ adminHeader('链接列表', 'links');
 </div>
 
 <script>
-// Copy link to clipboard
+// Copy link to clipboard (format: 【活动名称】：链接)
 document.querySelectorAll('.copy-link-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault(); e.stopPropagation();
         const url = this.getAttribute('data-url');
+        const campaign = this.getAttribute('data-campaign') || '未命名';
         if (!url) return;
+        const text = '【' + campaign + '】：' + url;
         const ta = document.createElement('textarea');
-        ta.value = url;
+        ta.value = text;
         ta.style.position = 'fixed';
         ta.style.left = '-9999px';
         document.body.appendChild(ta);
