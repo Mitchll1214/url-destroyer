@@ -1,6 +1,6 @@
 ﻿# 🔗 url-destroyer
 
-基于 PHP + SQLite 的**一次性链接管理系统**。可视化表单构建、定时销毁、访问追踪、CSV 导出，Docker 一键部署。 
+基于 PHP + SQLite 的**一次性链接管理系统**。可视化表单构建、定时销毁、访问追踪、CSV 导出，Docker 一键部署。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/php-8.2-777bb4.svg)](https://php.net)
