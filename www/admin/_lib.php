@@ -81,12 +81,21 @@ function showLogin(): void {
         <link rel="stylesheet" href="../assets/style.css">
     </head>
     <body class="login-page">
+    <!-- Floating particles -->
+    <div class="login-bg-particles" aria-hidden="true">
+        <span style="left:10%;animation-duration:14s;animation-delay:0s;width:2px;height:2px;"></span>
+        <span style="left:25%;animation-duration:18s;animation-delay:2s;width:3px;height:3px;"></span>
+        <span style="left:40%;animation-duration:12s;animation-delay:1s;width:2px;height:2px;"></span>
+        <span style="left:55%;animation-duration:16s;animation-delay:3s;width:4px;height:4px;"></span>
+        <span style="left:70%;animation-duration:20s;animation-delay:0.5s;width:2px;height:2px;"></span>
+        <span style="left:85%;animation-duration:15s;animation-delay:1.5s;width:3px;height:3px;"></span>
+    </div>
     <div class="login-container">
         <div class="login-icon">🔐</div>
         <h1>管理员登录</h1>
         <p class="login-subtitle">链接销毁管理系统</p>
         <?php if (!empty($GLOBALS['login_error'])): ?>
-            <div class="alert alert-error"><?= htmlspecialchars($GLOBALS['login_error']) ?></div>
+            <div class="alert alert-error"><span class="alert-icon">⚠️</span><?= htmlspecialchars($GLOBALS['login_error']) ?></div>
         <?php endif; ?>
         <form method="post">
             <div class="form-group">
@@ -107,7 +116,7 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
     <html lang="zh">
     <head>
         <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title><?= htmlspecialchars($title) ?> — 动态网址销毁系统</title>
+        <title><?= htmlspecialchars($title) ?> — 链接销毁系统</title>
         <link rel="stylesheet" href="../assets/style.css">
     </head>
     <body>
@@ -115,11 +124,17 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
         <aside class="sidebar" id="sidebar">
             <div class="logo">🔗 链接<span>销毁</span></div>
             <nav>
-                <a href="index.php"        class="<?= $activeNav==='dashboard' ? 'active' : '' ?>">📊 仪表盘</a>
-                <a href="create.php"       class="<?= $activeNav==='create'   ? 'active' : '' ?>">➕ 创建链接</a>
-                <a href="links.php"        class="<?= $activeNav==='links'    ? 'active' : '' ?>">📋 链接列表</a>
-                <a href="settings.php"     class="<?= $activeNav==='settings' ? 'active' : '' ?>">⚙️ 设置</a>
+                <a href="index.php"    data-icon="📊" class="<?= $activeNav==='dashboard' ? 'active' : '' ?>">📊 仪表盘</a>
+                <a href="create.php"   data-icon="➕" class="<?= $activeNav==='create'   ? 'active' : '' ?>">➕ 创建链接</a>
+                <a href="links.php"    data-icon="📋" class="<?= $activeNav==='links'    ? 'active' : '' ?>">📋 链接列表</a>
+                <a href="settings.php" data-icon="⚙️" class="<?= $activeNav==='settings' ? 'active' : '' ?>">⚙️ 设置</a>
             </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <span>管理员</span>
+                </div>
+            </div>
         </aside>
         <main class="main">
         <div class="topbar">
@@ -127,16 +142,17 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
             <span style="flex:1;"></span>
             <a href="?logout=1" class="logout-btn">🚪 退出</a>
         </div>
+        <div class="main-inner">
     <?php
 }
 
 function adminFooter(): void {
     ?>
+        </div><!-- /.main-inner -->
         </main>
     </div>
     <script>
     (function(){
-        var sidebar = document.getElementById('sidebar');
         var toggle = document.getElementById('sidebarToggle');
         var wrapper = document.querySelector('.admin-wrapper');
         var saved = localStorage.getItem('sidebar_collapsed');

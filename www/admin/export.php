@@ -97,11 +97,16 @@ $logs = $logStmt->fetchAll();
 // ── Build CSV ──
 $fieldNamesOrdered = array_keys($allFieldNames);
 
-// Headers: 活动名称, 链接ID, Token, [fields...], 提交时间
-$headers = array_merge(
+// Headers: 第1行字段标签，第2行字段名，之后为数据
+$headerLabels = array_merge(
     ['活动名称', '链接ID', 'Token'],
     array_values($allFieldNames),
     ['提交时间']
+);
+$headerNames = array_merge(
+    ['campaign_name', 'link_id', 'token'],
+    array_keys($allFieldNames),
+    ['accessed_at']
 );
 
 $csvFilename = 'export_' . date('Ymd_His') . '.csv';
@@ -113,15 +118,16 @@ header('Content-Disposition: attachment; filename="' . $csvFilename . '"');
 $output = fopen('php://output', 'w');
 fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-// Write header
-fputcsv($output, $headers);
+// Write headers
+fputcsv($output, $headerLabels);
+fputcsv($output, $headerNames);
 
 // Write rows
 foreach ($logs as $log) {
     $formData = json_decode($log['form_data'], true) ?: [];
     $row = [
         $log['campaign_name'],
-        '#' . $log['link_id'],
+        $log['link_id'],
         $log['token'],
     ];
     foreach ($fieldNamesOrdered as $fn) {

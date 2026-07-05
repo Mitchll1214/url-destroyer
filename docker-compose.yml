@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 
 # ── 腾讯云部署（apt 和 Docker 镜像均已适配）──
 # 1. 配置 Docker 镜像加速:

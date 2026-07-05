@@ -163,30 +163,109 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted): void {
         <title><?= $title ?></title>
         <style>
             *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-            body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
-            .fb-container{background:#fff;border-radius:16px;padding:clamp(24px,5vw,40px);max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.15)}
-            .fb-container h2{text-align:center;color:#333;margin-bottom:4px;font-size:clamp(18px,4vw,22px)}
-            .fb-subtitle{text-align:center;color:#888;font-size:13px;margin-bottom:24px}
-            .fb-field{margin-bottom:16px}
-            .fb-field label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:4px}
+            body{
+                font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+                           "Helvetica Neue",Arial,"Noto Sans SC",sans-serif;
+                background:linear-gradient(155deg,#667eea 0%,#764ba2 50%,#5a3f8a 100%);
+                min-height:100vh;display:flex;align-items:center;justify-content:center;
+                padding:16px;-webkit-font-smoothing:antialiased;
+                position:relative;overflow:hidden;
+            }
+            body::before{
+                content:'';position:absolute;
+                width:400px;height:400px;
+                background:radial-gradient(circle,rgba(255,255,255,.06),transparent 70%);
+                top:-120px;right:-80px;border-radius:50%;pointer-events:none;
+            }
+            body::after{
+                content:'';position:absolute;
+                width:300px;height:300px;
+                background:radial-gradient(circle,rgba(255,255,255,.05),transparent 70%);
+                bottom:-80px;left:-60px;border-radius:50%;pointer-events:none;
+            }
+            .fb-container{
+                background:#fff;border-radius:20px;
+                padding:clamp(28px,5vw,44px);max-width:520px;width:100%;
+                box-shadow:0 28px 80px rgba(0,0,0,.22),0 0 0 1px rgba(255,255,255,.1);
+                position:relative;z-index:1;
+                animation:fbSlideIn .5s cubic-bezier(.22,.61,.36,1);
+            }
+            @keyframes fbSlideIn{
+                from{opacity:0;transform:translateY(20px) scale(.96)}
+                to{opacity:1;transform:translateY(0) scale(1)}
+            }
+            .fb-container h2{
+                text-align:center;color:#1a1a2e;margin-bottom:4px;
+                font-size:clamp(18px,4.5vw,24px);font-weight:800;letter-spacing:-.3px;
+            }
+            .fb-subtitle{text-align:center;color:#999;font-size:13px;margin-bottom:28px;line-height:1.5}
+            .fb-field{margin-bottom:18px}
+            .fb-field label{
+                display:block;font-size:13px;font-weight:600;color:#4a4a5a;
+                margin-bottom:5px;letter-spacing:.2px;
+            }
             .fb-field .req{color:#e74c3c}
-            .fb-field input,.fb-field select,.fb-field textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .2s,box-shadow .2s;background:#fff}
-            .fb-field input:focus,.fb-field select:focus,.fb-field textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.15)}
-            .fb-field textarea{min-height:90px;resize:vertical}
-            .fb-submit{width:100%;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .2s}
-            .fb-submit:hover{opacity:.9}
-            .fb-success{text-align:center;padding:20px}
-            .fb-success .icon{font-size:48px;margin-bottom:12px}
-            .fb-success h3{color:#27ae60;margin-bottom:8px}
-            .fb-success p{color:#888;font-size:14px}
-            @media(max-width:480px){.fb-container{border-radius:12px;padding:20px}}
+            .fb-field input,.fb-field select,.fb-field textarea{
+                width:100%;padding:11px 14px;border:1.5px solid #e0e0ea;
+                border-radius:10px;font-size:14px;font-family:inherit;
+                transition:border-color .2s,box-shadow .2s;background:#fafbfd;color:#1a1a2e;
+            }
+            .fb-field input:hover,.fb-field select:hover,.fb-field textarea:hover{border-color:#c8c8d8}
+            .fb-field input:focus,.fb-field select:focus,.fb-field textarea:focus{
+                outline:none;border-color:#667eea;
+                box-shadow:0 0 0 4px rgba(102,126,234,.12);background:#fff;
+            }
+            .fb-field textarea{min-height:100px;resize:vertical;font-size:14px;line-height:1.6}
+            .fb-submit{
+                width:100%;padding:14px;
+                background:linear-gradient(135deg,#667eea,#5a4fcf);
+                color:#fff;border:none;border-radius:10px;
+                font-size:16px;font-weight:700;cursor:pointer;
+                transition:all .25s;letter-spacing:.3px;
+                box-shadow:0 4px 16px rgba(102,126,234,.3);
+            }
+            .fb-submit:hover{
+                transform:translateY(-2px);
+                box-shadow:0 8px 24px rgba(102,126,234,.4);
+            }
+            .fb-submit:active{transform:translateY(0)}
+            .fb-success{
+                text-align:center;padding:28px 10px;
+                animation:successPop .5s cubic-bezier(.22,.61,.36,1);
+            }
+            @keyframes successPop{
+                0%{transform:scale(.7);opacity:0}
+                60%{transform:scale(1.05)}
+                100%{transform:scale(1);opacity:1}
+            }
+            .fb-success .icon-wrap{
+                width:80px;height:80px;margin:0 auto 20px;
+                border-radius:50%;
+                background:linear-gradient(135deg,#27ae60,#2ecc71);
+                display:flex;align-items:center;justify-content:center;
+                font-size:38px;
+                box-shadow:0 12px 32px rgba(39,174,96,.3);
+                animation:iconBounce .6s cubic-bezier(.22,.61,.36,1) .15s both;
+            }
+            @keyframes iconBounce{
+                0%{transform:scale(0)}
+                60%{transform:scale(1.15)}
+                100%{transform:scale(1)}
+            }
+            .fb-success h3{color:#1a1a2e;margin:0 0 6px;font-size:20px;font-weight:800}
+            .fb-success p{color:#999;font-size:14px;line-height:1.6;max-width:300px;margin:0 auto}
+            @media(max-width:480px){
+                .fb-container{border-radius:14px;padding:24px 20px}
+                .fb-success{padding:20px 0}
+                .fb-success .icon-wrap{width:64px;height:64px;font-size:30px}
+            }
         </style>
     </head>
     <body>
     <?php if ($submitted): ?>
     <div class="fb-container">
         <div class="fb-success">
-            <div class="icon">✅</div>
+            <div class="icon-wrap">✅</div>
             <h3><?= $okTitle ?></h3>
             <p><?= $okText ?></p>
         </div>
@@ -239,18 +318,195 @@ function showError(string $msg): void {
         <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>链接已失效</title>
         <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f0f2f5; margin:0; }
-            .expired-box { text-align:center; background:#fff; padding:48px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); max-width:420px; }
-            .expired-box .icon { font-size:56px; margin-bottom:16px; }
-            .expired-box h2 { color:#e94560; margin:0 0 8px; }
-            .expired-box p { color:#888; margin:0; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                             "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", sans-serif;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(160deg, #0d0d2a 0%, #141438 35%, #1a1a45 65%, #0f0f28 100%);
+                overflow: hidden;
+                position: relative;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            /* ── Ambient glow orbs ── */
+            .bg-orb {
+                position: absolute;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 0;
+            }
+            .bg-orb--1 {
+                width: 500px; height: 500px;
+                background: radial-gradient(circle, rgba(233,69,96,0.07) 0%, transparent 70%);
+                top: -180px; right: -120px;
+                animation: orbFloat 14s ease-in-out infinite;
+            }
+            .bg-orb--2 {
+                width: 380px; height: 380px;
+                background: radial-gradient(circle, rgba(102,126,234,0.06) 0%, transparent 70%);
+                bottom: -100px; left: -80px;
+                animation: orbFloat 18s ease-in-out infinite reverse;
+            }
+            @keyframes orbFloat {
+                0%, 100% { transform: translate(0, 0) scale(1); }
+                33%  { transform: translate(30px, -20px) scale(1.08); }
+                66%  { transform: translate(-15px, 15px) scale(0.94); }
+            }
+
+            /* ── Floating dots ── */
+            .dot {
+                position: absolute;
+                width: 3px; height: 3px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 50%;
+                pointer-events: none;
+                animation: dotRise linear infinite;
+            }
+            @keyframes dotRise {
+                0%   { transform: translateY(105vh) scale(0); opacity: 0; }
+                10%  { opacity: 1; }
+                85%  { opacity: 1; }
+                100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+            }
+
+            /* ── Card ── */
+            .expired-wrapper {
+                position: relative;
+                z-index: 1;
+                animation: cardEntry 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+            }
+            @keyframes cardEntry {
+                from { opacity: 0; transform: translateY(28px) scale(0.94); }
+                to   { opacity: 1; transform: translateY(0) scale(1); }
+            }
+
+            .expired-card {
+                background: rgba(255,255,255,0.95);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-radius: 24px;
+                padding: 52px 44px 44px;
+                text-align: center;
+                max-width: 440px;
+                width: 92vw;
+                box-shadow:
+                    0 32px 90px rgba(0,0,0,0.32),
+                    0 0 0 1px rgba(255,255,255,0.12),
+                    inset 0 1px 0 rgba(255,255,255,0.7);
+            }
+
+            /* ── Icon ring ── */
+            .expired-icon {
+                width: 88px;
+                height: 88px;
+                margin: 0 auto 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 42px;
+                position: relative;
+            }
+            .expired-icon::before {
+                content: '';
+                position: absolute;
+                inset: -4px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #e94560, #d63852);
+                z-index: -1;
+            }
+            .expired-icon::after {
+                content: '';
+                position: absolute;
+                inset: 2px;
+                border-radius: 50%;
+                background: #fff;
+                z-index: -1;
+            }
+            .expired-icon .ring {
+                position: absolute;
+                inset: -12px;
+                border-radius: 50%;
+                border: 3px solid rgba(233,69,96,0.12);
+                animation: ringPulse 2.5s ease-in-out infinite;
+            }
+            @keyframes ringPulse {
+                0%, 100% { transform: scale(1); opacity: 0.6; }
+                50%  { transform: scale(1.12); opacity: 1; }
+            }
+
+            /* ── Typography ── */
+            .expired-card h1 {
+                font-size: 24px;
+                font-weight: 800;
+                color: #1a1a2e;
+                margin-bottom: 6px;
+                letter-spacing: -0.4px;
+            }
+            .expired-card .sub {
+                font-size: 14px;
+                color: #999;
+                margin-bottom: 20px;
+                line-height: 1.6;
+            }
+            .expired-card .divider {
+                width: 50px;
+                height: 3px;
+                background: linear-gradient(90deg, #e94560, transparent);
+                margin: 0 auto 22px;
+                border-radius: 2px;
+            }
+            .expired-card .reason {
+                font-size: 14px;
+                color: #777;
+                line-height: 1.7;
+                padding: 14px 20px;
+                background: #fafafa;
+                border-radius: 12px;
+                border: 1px solid #f0f0f4;
+            }
+
+            /* ── Footer text ── */
+            .expired-footer {
+                margin-top: 28px;
+                font-size: 12px;
+                color: rgba(255,255,255,0.35);
+                text-align: center;
+                position: relative;
+                z-index: 1;
+            }
         </style>
     </head>
     <body>
-    <div class="expired-box">
-        <div class="icon">⏰</div>
-        <h2>链接已失效</h2>
-        <p><?= htmlspecialchars($msg) ?></p>
+    <!-- Ambient orbs -->
+    <div class="bg-orb bg-orb--1"></div>
+    <div class="bg-orb bg-orb--2"></div>
+
+    <!-- Floating dots -->
+    <span class="dot" style="left:10%;animation-duration:12s;animation-delay:0s;"></span>
+    <span class="dot" style="left:25%;animation-duration:16s;animation-delay:1.5s;"></span>
+    <span class="dot" style="left:42%;animation-duration:13s;animation-delay:3s;"></span>
+    <span class="dot" style="left:58%;animation-duration:19s;animation-delay:0.8s;"></span>
+    <span class="dot" style="left:72%;animation-duration:14s;animation-delay:2.2s;"></span>
+    <span class="dot" style="left:88%;animation-duration:17s;animation-delay:1s;"></span>
+
+    <div class="expired-wrapper">
+        <div class="expired-card">
+            <div class="expired-icon">
+                <span class="ring"></span>
+                ⏰
+            </div>
+            <h1>链接已失效</h1>
+            <p class="sub">此链接可能已过期、被销毁或达到访问上限</p>
+            <div class="divider"></div>
+            <p class="reason"><?= htmlspecialchars($msg) ?></p>
+        </div>
+        <p class="expired-footer">Link Destroyer · 链接销毁系统</p>
     </div>
     </body></html>
     <?php
