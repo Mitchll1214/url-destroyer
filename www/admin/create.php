@@ -85,15 +85,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 adminHeader('创建链接', 'create');
 ?>
 
-<h1 class="page-title">➕ 批量创建链接</h1>
+<h1 class="page-title main-shell">➕ 批量创建链接</h1>
 
 <?php if ($error): ?>
     <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 
 <?php if (!empty($createdLinks)): ?>
-    <div class="alert alert-success">✅ 成功创建 <strong><?= count($createdLinks) ?></strong> 个链接！</div>
-    <div class="card">
+    <div class="alert alert-success main-shell">✅ 成功创建 <strong><?= count($createdLinks) ?></strong> 个链接！</div>
+    <div class="card main-shell">
         <div class="card-header">🔗 生成的链接 (请立即复制保存)</div>
         <?php foreach ($createdLinks as $link): ?>
             <div style="margin-bottom:8px;">
@@ -104,7 +104,7 @@ adminHeader('创建链接', 'create');
     </div>
 <?php endif; ?>
 
-<div class="card">
+<div class="card main-shell">
     <div class="card-header">📝 链接配置</div>
     <form method="post" id="createForm">
         <div class="form-group">

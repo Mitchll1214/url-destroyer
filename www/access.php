@@ -386,31 +386,53 @@ function showError(string $msg): void {
             }
 
             .expired-card {
-                background: rgba(255,255,255,0.95);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                border-radius: 24px;
-                padding: 52px 44px 44px;
+                background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.94));
+                backdrop-filter: blur(22px);
+                -webkit-backdrop-filter: blur(22px);
+                border-radius: 28px;
+                padding: 56px 46px 46px;
                 text-align: center;
-                max-width: 440px;
+                max-width: 460px;
                 width: 92vw;
                 box-shadow:
-                    0 32px 90px rgba(0,0,0,0.32),
-                    0 0 0 1px rgba(255,255,255,0.12),
-                    inset 0 1px 0 rgba(255,255,255,0.7);
+                    0 34px 100px rgba(0,0,0,0.34),
+                    0 0 0 1px rgba(255,255,255,0.14),
+                    inset 0 1px 0 rgba(255,255,255,0.78);
+                position: relative;
+                overflow: hidden;
+            }
+            .expired-card::before {
+                content: '';
+                position: absolute;
+                inset: 0 0 auto 0;
+                height: 1px;
+                background: linear-gradient(90deg, transparent, rgba(233,69,96,0.24), transparent);
+                pointer-events: none;
+            }
+            .expired-card::after {
+                content: '';
+                position: absolute;
+                top: -80px;
+                right: -60px;
+                width: 180px;
+                height: 180px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(233,69,96,0.08) 0%, transparent 70%);
+                pointer-events: none;
             }
 
             /* ── Icon ring ── */
             .expired-icon {
-                width: 88px;
-                height: 88px;
-                margin: 0 auto 24px;
+                width: 94px;
+                height: 94px;
+                margin: 0 auto 26px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 42px;
+                font-size: 44px;
                 position: relative;
+                filter: drop-shadow(0 8px 18px rgba(233,69,96,0.16));
             }
             .expired-icon::before {
                 content: '';
@@ -450,9 +472,12 @@ function showError(string $msg): void {
             }
             .expired-card .sub {
                 font-size: 14px;
-                color: #999;
+                color: #8f8f9e;
                 margin-bottom: 20px;
-                line-height: 1.6;
+                line-height: 1.7;
+                max-width: 290px;
+                margin-left: auto;
+                margin-right: auto;
             }
             .expired-card .divider {
                 width: 50px;
@@ -463,12 +488,13 @@ function showError(string $msg): void {
             }
             .expired-card .reason {
                 font-size: 14px;
-                color: #777;
-                line-height: 1.7;
-                padding: 14px 20px;
-                background: #fafafa;
-                border-radius: 12px;
+                color: #6f6f7e;
+                line-height: 1.75;
+                padding: 16px 20px;
+                background: linear-gradient(180deg, #fcfcfd, #f7f7fa);
+                border-radius: 16px;
                 border: 1px solid #f0f0f4;
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
             }
 
             /* ── Footer text ── */
@@ -502,7 +528,7 @@ function showError(string $msg): void {
                 ⏰
             </div>
             <h1>链接已失效</h1>
-            <p class="sub">此链接可能已过期、被销毁或达到访问上限</p>
+            <p class="sub">此链接可能已过期、被系统销毁，或已经达到访问上限</p>
             <div class="divider"></div>
             <p class="reason"><?= htmlspecialchars($msg) ?></p>
         </div>

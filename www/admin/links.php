@@ -89,7 +89,7 @@ $links->execute();
 adminHeader('链接列表', 'links');
 ?>
 
-<h1 class="page-title">📋 链接列表</h1>
+<h1 class="page-title main-shell">📋 链接列表</h1>
 
 <?php if ($deleted): ?>
     <div class="alert alert-success">✅ 链接已删除</div>
@@ -98,18 +98,18 @@ adminHeader('链接列表', 'links');
     <div class="alert alert-success">✅ 链接已更新</div>
 <?php endif; ?>
 
-<div class="card">
-    <form method="get" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee;">
+<div class="card main-shell">
+    <form method="get" class="filter-bar">
         <input type="hidden" name="status" value="<?= htmlspecialchars($statusFilter) ?>">
-        <div class="form-group" style="margin:0;"><label style="font-size:11px;">活动名称</label><input type="text" name="campaign" value="<?= htmlspecialchars($searchCampaign) ?>" placeholder="模糊搜索..." style="width:140px;padding:6px 10px;font-size:12px;"></div>
-        <div class="form-group" style="margin:0;"><label style="font-size:11px;">创建日期从</label><input type="date" name="date_from" value="<?= htmlspecialchars($dateFrom) ?>" style="width:140px;padding:6px 10px;font-size:12px;"></div>
-        <div class="form-group" style="margin:0;"><label style="font-size:11px;">至</label><input type="date" name="date_to" value="<?= htmlspecialchars($dateTo) ?>" style="width:140px;padding:6px 10px;font-size:12px;"></div>
-        <button type="submit" class="btn btn-sm btn-primary" style="height:32px;">🔍 查询</button>
-        <a href="links.php" class="btn btn-sm btn-outline" style="height:32px;">重置</a>
-        <a href="export.php?<?= http_build_query(array_filter(['status'=>$statusFilter, 'campaign'=>$searchCampaign, 'date_from'=>$dateFrom, 'date_to'=>$dateTo])) ?>" class="btn btn-sm btn-primary" style="height:32px;margin-left:auto;background:#27ae60;">📥 导出CSV</a>
+        <div class="filter-group"><label>活动名称</label><input type="text" name="campaign" value="<?= htmlspecialchars($searchCampaign) ?>" placeholder="模糊搜索..."></div>
+        <div class="filter-group"><label>创建日期从</label><input type="date" name="date_from" value="<?= htmlspecialchars($dateFrom) ?>"></div>
+        <div class="filter-group"><label>至</label><input type="date" name="date_to" value="<?= htmlspecialchars($dateTo) ?>"></div>
+        <button type="submit" class="btn btn-sm btn-primary">🔍 查询</button>
+        <a href="links.php" class="btn btn-sm btn-outline">重置</a>
+        <a href="export.php?<?= http_build_query(array_filter(['status'=>$statusFilter, 'campaign'=>$searchCampaign, 'date_from'=>$dateFrom, 'date_to'=>$dateTo])) ?>" class="btn btn-sm btn-primary" style="margin-left:auto;background:#27ae60;">📥 导出CSV</a>
     </form>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div>
+    <div class="toolbar-row">
+        <div class="chip-group">
             <a href="links.php" class="btn btn-sm <?= $statusFilter==='' ? 'btn-primary' : 'btn-outline' ?>">全部</a>
             <a href="links.php?status=active" class="btn btn-sm <?= $statusFilter==='active' ? 'btn-primary' : 'btn-outline' ?>">活跃</a>
             <a href="links.php?status=opened" class="btn btn-sm <?= $statusFilter==='opened' ? 'btn-primary' : 'btn-outline' ?>">已打开</a>
@@ -118,6 +118,7 @@ adminHeader('链接列表', 'links');
         <span class="text-muted">共 <?= $total ?> 条</span>
     </div>
 
+    <div class="table-wrap">
     <table>
         <thead><tr>
             <th>ID</th><th>活动</th><th>Token</th><th>状态</th><th>访问</th><th>超时(s)</th><th>创建时间</th><th>首次访问</th><th>过期时间</th><th>操作</th>
@@ -172,10 +173,11 @@ adminHeader('链接列表', 'links');
         </tr>
         <?php endforeach; ?>
         <?php if ($links->rowCount() === 0): ?>
-        <tr><td colspan="10" style="text-align:center;color:#888;padding:32px;">暂无数据</td></tr>
+        <tr class="empty-row"><td colspan="10">暂无数据</td></tr>
         <?php endif; ?>
         </tbody>
     </table>
+    </div>
 
     <?php if ($totalPages > 1): ?>
     <div class="pagination">

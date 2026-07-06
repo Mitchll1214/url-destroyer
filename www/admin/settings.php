@@ -54,15 +54,15 @@ $currentExpiry  = $db->query("SELECT value FROM settings WHERE key='default_abso
 adminHeader('系统设置', 'settings');
 ?>
 
-<h1 class="page-title">⚙️ 系统设置</h1>
+<h1 class="page-title main-shell">⚙️ 系统设置</h1>
 
 <?php if ($message): ?>
-    <div class="alert alert-success"><?= $message ?></div>
+    <div class="alert alert-success main-shell"><?= $message ?></div>
 <?php endif; ?>
 
-<div class="card">
+<div class="card main-shell">
     <div class="card-header">🕐 默认过期配置</div>
-    <p class="text-muted mb-16">这些默认值将在创建新链接时预填，每个链接可单独覆盖。</p>
+    <p class="section-meta">这些默认值将在创建新链接时预填，每个链接可单独覆盖。</p>
     <form method="post">
         <div class="form-row">
             <div class="form-group">
@@ -80,9 +80,9 @@ adminHeader('系统设置', 'settings');
     </form>
 </div>
 
-<div class="card">
+<div class="card main-shell">
     <div class="card-header">🔑 修改管理员密码</div>
-    <p class="text-muted mb-16">修改后即时生效。默认初始密码：<code><?= htmlspecialchars(ADMIN_PASSWORD) ?></code></p>
+    <p class="section-meta">修改后即时生效。默认初始密码：<code><?= htmlspecialchars(ADMIN_PASSWORD) ?></code></p>
     <form method="post">
         <input type="hidden" name="change_password" value="1">
         <div class="form-row">
@@ -96,12 +96,12 @@ adminHeader('系统设置', 'settings');
     </form>
 </div>
 
-<div class="card">
+<div class="card main-shell">
     <div class="card-header">📊 数据库信息</div>
-    <table style="width:auto;">
-        <tr><td style="font-weight:600;width:120px;">数据库路径</td><td><code><?= htmlspecialchars(DB_PATH) ?></code></td></tr>
-        <tr><td style="font-weight:600;">链接总数</td><td><?= $db->query("SELECT COUNT(*) FROM links")->fetchColumn() ?></td></tr>
-        <tr><td style="font-weight:600;">日志总数</td><td><?= $db->query("SELECT COUNT(*) FROM access_logs")->fetchColumn() ?></td></tr>
+    <table class="kv-table">
+        <tr><td>数据库路径</td><td><code><?= htmlspecialchars(DB_PATH) ?></code></td></tr>
+        <tr><td>链接总数</td><td><?= $db->query("SELECT COUNT(*) FROM links")->fetchColumn() ?></td></tr>
+        <tr><td>日志总数</td><td><?= $db->query("SELECT COUNT(*) FROM access_logs")->fetchColumn() ?></td></tr>
     </table>
 </div>
 

@@ -52,14 +52,14 @@ $logs->execute();
 adminHeader('访问统计 #' . $linkId, 'links');
 ?>
 
-<h1 class="page-title">📈 访问统计 — #<?= $linkId ?> <?= htmlspecialchars($link['campaign_name']) ?></h1>
+<h1 class="page-title main-shell">📈 访问统计 — #<?= $linkId ?> <?= htmlspecialchars($link['campaign_name']) ?></h1>
 
 <?php if ($cleared): ?>
-    <div class="alert alert-success">✅ 访问日志已清空</div>
+    <div class="alert alert-success main-shell">✅ 访问日志已清空</div>
 <?php endif; ?>
 
 <!-- Link Summary -->
-<div class="stats-grid">
+<div class="stats-grid main-shell">
     <div class="stat-card">
         <div class="stat-value"><?= $link['access_count'] ?></div>
         <div class="stat-label">总访问次数</div>
@@ -80,16 +80,16 @@ adminHeader('访问统计 #' . $linkId, 'links');
     </div>
 </div>
 
-<div class="card">
+<div class="card main-shell">
     <div class="card-header">🔗 链接详情</div>
-    <table style="width:auto;">
-        <tr><td style="font-weight:600;width:100px;">访问链接</td><td><div class="url-display"><?= htmlspecialchars(BASE_URL . '/access.php?token=' . $link['token']) ?></div></td></tr>
-        <tr><td style="font-weight:600;">创建时间</td><td><?= $link['created_at'] ?></td></tr>
-        <tr><td style="font-weight:600;">首次访问</td><td><?= $link['first_accessed_at'] ?: '尚未访问' ?></td></tr>
-        <tr><td style="font-weight:600;">过期时间</td><td><?= $link['expires_at'] ?: '未开始计时' ?></td></tr>
-        <tr><td style="font-weight:600;">访问超时</td><td><?= $link['access_timeout'] ?> 秒 (<?= round($link['access_timeout']/60, 1) ?> 分钟)</td></tr>
-        <tr><td style="font-weight:600;">绝对过期</td><td><?= $link['absolute_expiry_hours'] ?> 小时</td></tr>
-        <tr><td style="font-weight:600;">最大次数</td><td><?= $link['max_accesses'] ?></td></tr>
+    <table class="kv-table">
+        <tr><td>访问链接</td><td><div class="url-display"><?= htmlspecialchars(BASE_URL . '/access.php?token=' . $link['token']) ?></div></td></tr>
+        <tr><td>创建时间</td><td><?= $link['created_at'] ?></td></tr>
+        <tr><td>首次访问</td><td><?= $link['first_accessed_at'] ?: '尚未访问' ?></td></tr>
+        <tr><td>过期时间</td><td><?= $link['expires_at'] ?: '未开始计时' ?></td></tr>
+        <tr><td>访问超时</td><td><?= $link['access_timeout'] ?> 秒 (<?= round($link['access_timeout']/60, 1) ?> 分钟)</td></tr>
+        <tr><td>绝对过期</td><td><?= $link['absolute_expiry_hours'] ?> 小时</td></tr>
+        <tr><td>最大次数</td><td><?= $link['max_accesses'] ?></td></tr>
     </table>
 </div>
 
@@ -105,8 +105,8 @@ if (!empty(trim($tc))) {
 }
 if ($cfg):
 ?>
-<details class="card" style="margin-bottom:24px;">
-    <summary class="card-header" style="cursor:pointer;list-style:none;">👁 表单预览 <span style="font-size:11px;color:#888;">(点击展开)</span></summary>
+<details class="card main-shell">
+    <summary class="card-header">👁 表单预览 <span style="font-size:11px;color:#888;">(点击展开)</span></summary>
     <div style="display:flex;justify-content:center;">
         <div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;padding:20px;max-width:420px;width:100%;">
             <div style="background:#fff;border-radius:10px;padding:20px;">
@@ -141,7 +141,7 @@ if ($cfg):
 <?php endif; ?>
 
 <!-- Access Logs -->
-<div class="card">
+<div class="card main-shell">
     <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
         <span>📋 访问记录 (<?= $totalLogs ?> 条)</span>
         <?php if ($totalLogs > 0): ?>
@@ -151,6 +151,7 @@ if ($cfg):
         </form>
         <?php endif; ?>
     </div>
+    <div class="table-wrap">
     <table>
         <thead><tr>
             <th>#</th><th>IP</th><th>User-Agent</th><th>Referer</th><th>表单数据</th><th>访问时间</th>
@@ -180,6 +181,7 @@ if ($cfg):
         <?php endif; ?>
         </tbody>
     </table>
+    </div>
 
     <?php if ($totalPages > 1): ?>
     <div class="pagination">

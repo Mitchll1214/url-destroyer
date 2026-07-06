@@ -122,25 +122,31 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
     <body>
     <div class="admin-wrapper">
         <aside class="sidebar" id="sidebar">
-            <div class="logo">🔗 链接<span>销毁</span></div>
+            <div class="logo">🔗 链接<span>销毁</span><span class="version">ADMIN</span></div>
             <nav>
-                <a href="index.php"    data-icon="📊" class="<?= $activeNav==='dashboard' ? 'active' : '' ?>">📊 仪表盘</a>
-                <a href="create.php"   data-icon="➕" class="<?= $activeNav==='create'   ? 'active' : '' ?>">➕ 创建链接</a>
-                <a href="links.php"    data-icon="📋" class="<?= $activeNav==='links'    ? 'active' : '' ?>">📋 链接列表</a>
-                <a href="settings.php" data-icon="⚙️" class="<?= $activeNav==='settings' ? 'active' : '' ?>">⚙️ 设置</a>
+                <a href="index.php"    data-icon="📊" class="<?= $activeNav==='dashboard' ? 'active' : '' ?>"><span class="nav-icon">📊</span><span class="nav-text">仪表盘</span></a>
+                <a href="create.php"   data-icon="➕" class="<?= $activeNav==='create'   ? 'active' : '' ?>"><span class="nav-icon">➕</span><span class="nav-text">创建链接</span></a>
+                <a href="links.php"    data-icon="📋" class="<?= $activeNav==='links'    ? 'active' : '' ?>"><span class="nav-icon">📋</span><span class="nav-text">链接列表</span></a>
+                <a href="settings.php" data-icon="⚙️" class="<?= $activeNav==='settings' ? 'active' : '' ?>"><span class="nav-icon">⚙️</span><span class="nav-text">设置</span></a>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-info">
                     <div class="user-avatar">👤</div>
-                    <span>管理员</span>
+                    <div>
+                        <div class="user-name">管理员</div>
+                        <div class="user-role">后台控制台</div>
+                    </div>
                 </div>
             </div>
         </aside>
         <main class="main">
         <div class="topbar">
             <button class="sidebar-toggle" id="sidebarToggle" title="折叠菜单">☰</button>
-            <span style="flex:1;"></span>
-            <a href="?logout=1" class="logout-btn">🚪 退出</a>
+            <div class="breadcrumb">管理后台 <span class="breadcrumb-sep">/</span> <span><?= htmlspecialchars($title) ?></span></div>
+            <div class="topbar-spacer"></div>
+            <div class="topbar-actions">
+                <a href="?logout=1" class="logout-btn">🚪 退出</a>
+            </div>
         </div>
         <div class="main-inner">
     <?php

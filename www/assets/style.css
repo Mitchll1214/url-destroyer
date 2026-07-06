@@ -114,8 +114,9 @@ code {
    3. SIDEBAR
    ================================================================ */
 .sidebar {
-    width: 260px;
-    background: linear-gradient(195deg, #060613 0%, #0d0d26 25%, #111133 60%, #0d0d2a 100%);
+    width: 268px;
+    background:
+        linear-gradient(210deg, #050511 0%, #0b0b22 22%, #121233 58%, #0d0d29 100%);
     color: var(--text-light);
     padding: 0;
     flex-shrink: 0;
@@ -123,7 +124,7 @@ code {
     overflow: hidden;
     position: relative;
     z-index: 20;
-    box-shadow: 3px 0 30px rgba(0, 0, 0, 0.25);
+    box-shadow: 10px 0 40px rgba(6, 8, 24, 0.28);
     display: flex;
     flex-direction: column;
 }
@@ -133,8 +134,20 @@ code {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse 80% 50% at 20% 30%, rgba(102, 126, 234, 0.04) 0%, transparent 70%),
-        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(233, 69, 96, 0.04) 0%, transparent 70%);
+        radial-gradient(ellipse 82% 52% at 18% 28%, rgba(102, 126, 234, 0.07) 0%, transparent 72%),
+        radial-gradient(ellipse 62% 42% at 82% 78%, rgba(233, 69, 96, 0.06) 0%, transparent 74%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), transparent 14%);
+    pointer-events: none;
+}
+
+.sidebar::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    bottom: 20px;
+    right: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.08), transparent);
     pointer-events: none;
 }
 
@@ -146,7 +159,7 @@ code {
     font-size: 21px;
     font-weight: 800;
     color: #fff;
-    padding: 26px 22px 22px;
+    padding: 28px 22px 24px;
     letter-spacing: -0.3px;
     position: relative;
     z-index: 1;
@@ -160,8 +173,8 @@ code {
     left: 22px;
     right: 22px;
     height: 1px;
-    background: linear-gradient(90deg, var(--primary), transparent 70%);
-    opacity: 0.5;
+    background: linear-gradient(90deg, rgba(233,69,96,0.75), rgba(102,126,234,0.18), transparent 78%);
+    opacity: 0.9;
 }
 
 .sidebar .logo span {
@@ -192,16 +205,28 @@ code {
     display: flex;
     align-items: center;
     gap: 11px;
-    padding: 12px 15px;
+    padding: 13px 15px;
     color: #a8a8c0;
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    border-radius: var(--radius);
-    margin-bottom: 3px;
+    border-radius: 14px;
+    margin-bottom: 5px;
     transition: all var(--transition);
     position: relative;
     letter-spacing: 0.15px;
+    border: 1px solid transparent;
+    overflow: hidden;
+}
+
+.sidebar nav a::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent 55%);
+    opacity: 0;
+    transition: opacity var(--transition);
+    pointer-events: none;
 }
 
 .sidebar nav a .nav-icon {
@@ -212,16 +237,23 @@ code {
 }
 
 .sidebar nav a:hover {
-    background: var(--sidebar-hover);
-    color: #e0e0f0;
-    transform: translateX(3px);
+    background: linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025));
+    color: #eef0ff;
+    transform: translateX(4px);
+    border-color: rgba(255,255,255,0.06);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+}
+
+.sidebar nav a:hover::before {
+    opacity: 1;
 }
 
 .sidebar nav a.active {
-    background: var(--sidebar-active);
+    background: linear-gradient(135deg, rgba(233, 69, 96, 0.18), rgba(102, 126, 234, 0.08));
     color: #fff;
     font-weight: 600;
-    box-shadow: inset 3px 0 0 var(--primary);
+    border-color: rgba(255,255,255,0.06);
+    box-shadow: inset 3px 0 0 var(--primary), 0 10px 22px rgba(6, 8, 24, 0.16);
 }
 
 .sidebar nav a.active::after {
@@ -239,24 +271,35 @@ code {
 
 /* ---- Sidebar Footer ---- */
 .sidebar-footer {
-    padding: 14px 18px;
+    padding: 16px 18px 18px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     position: relative;
     z-index: 1;
     flex-shrink: 0;
 }
 
+.sidebar-footer::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent 75%);
+}
+
+
 .sidebar-footer .user-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--text-muted);
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
 .sidebar-footer .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     display: flex;
@@ -264,6 +307,7 @@ code {
     justify-content: center;
     font-size: 14px;
     flex-shrink: 0;
+    box-shadow: 0 8px 18px rgba(233,69,96,0.22);
 }
 
 /* ================================================================
@@ -273,12 +317,25 @@ code {
     flex: 1;
     padding: 0;
     overflow-x: auto;
-    background: var(--bg);
+    background:
+        radial-gradient(circle at top right, rgba(102, 126, 234, 0.06), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(233, 69, 96, 0.05), transparent 24%),
+        var(--bg);
     min-height: 100vh;
 }
 
 .main-inner {
     padding: 32px 36px;
+}
+
+.main-inner > * {
+    position: relative;
+    z-index: 1;
+}
+
+.main-shell {
+    max-width: 1440px;
+    margin: 0 auto;
 }
 
 /* ================================================================
@@ -289,14 +346,24 @@ code {
     align-items: center;
     gap: 14px;
     padding: 16px 36px;
-    background: #fff;
-    border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 15;
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.88));
+    border-bottom: 1px solid rgba(230,230,240,0.85);
     box-shadow: var(--shadow-xs);
+}
+
+.topbar::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(233,69,96,0.16), transparent);
 }
 
 .topbar .breadcrumb {
@@ -305,11 +372,32 @@ code {
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.topbar .breadcrumb span {
+.topbar .breadcrumb .breadcrumb-sep {
+    color: #c1c1cf;
+    font-weight: 500;
+}
+
+.topbar .breadcrumb span:last-child {
     color: var(--text);
-    font-weight: 600;
+    font-weight: 700;
+}
+
+.topbar-spacer {
+    flex: 1 1 auto;
+    min-width: 12px;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .sidebar-toggle {
@@ -331,23 +419,6 @@ code {
     color: var(--text);
 }
 
-.logout-btn {
-    font-size: 13px;
-    color: var(--text-muted);
-    text-decoration: none;
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
-    font-weight: 500;
-    transition: all var(--transition);
-    border: 1px solid transparent;
-    white-space: nowrap;
-}
-
-.logout-btn:hover {
-    background: #fff3f5;
-    color: var(--primary);
-    border-color: rgba(233, 69, 96, 0.18);
-}
 
 /* ================================================================
    6. PAGE TITLE
@@ -378,18 +449,30 @@ code {
    7. CARDS
    ================================================================ */
 .card {
-    background: var(--card-bg);
+    background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(255,255,255,0.96));
     border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
     padding: 28px 30px;
     margin-bottom: 24px;
-    transition: box-shadow var(--transition), transform var(--transition);
-    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(233,69,96,0.10), transparent);
+    pointer-events: none;
 }
 
 .card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
+    border-color: rgba(233,69,96,0.08);
 }
 
 .card-header {
@@ -408,14 +491,23 @@ code {
     content: '';
     width: 4px;
     height: 18px;
-    background: var(--primary);
+    background: linear-gradient(180deg, var(--primary), #ff8295);
     border-radius: 2px;
     flex-shrink: 0;
+    box-shadow: 0 0 10px rgba(233,69,96,0.15);
 }
 
-.card-header:has(span)::before {
-    display: none;
-}
+.card-header:has(span)::before { display: none; }
+
+.panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+
+.kv-table { width: auto; min-width: 360px; border-collapse: collapse; }
+.kv-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); font-size: 13px; }
+.kv-table td:first-child { width: 120px; font-weight: 700; color: var(--text); background: #fbfbfe; }
+
+details.card summary { list-style: none; cursor: pointer; }
+details.card summary::-webkit-details-marker { display: none; }
+
 
 /* ================================================================
    8. STATS GRID
@@ -652,8 +744,14 @@ code {
    ================================================================ */
 .table-wrap {
     overflow-x: auto;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     border: 1px solid var(--border-light);
+    background: #fff;
+}
+
+.card > table,
+.card > .table-wrap > table {
+    margin-top: 4px;
 }
 
 table {
@@ -1204,6 +1302,18 @@ tbody .empty-row td {
 }
 
 @media (max-width: 900px) {
+    .breadcrumb {
+        display: none;
+    }
+
+    .topbar {
+        padding: 12px 16px;
+        gap: 10px;
+    }
+
+    .topbar-actions {
+        gap: 8px;
+    }
     .builder-grid {
         grid-template-columns: 1fr;
     }
@@ -1249,6 +1359,11 @@ tbody .empty-row td {
         font-size: 12px;
         border-radius: var(--radius-sm);
         margin-bottom: 0;
+        gap: 6px;
+    }
+
+    .sidebar-footer {
+        display: none;
     }
     .sidebar nav a:hover {
         transform: none;
