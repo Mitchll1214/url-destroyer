@@ -200,9 +200,16 @@ adminHeader('创建链接', 'create');
         <!-- === ADVANCED TAB === -->
         <div id="tab-advanced" style="display:none;">
             <div class="form-group">
-                <label>目标页面内容 (HTML)</label>
-                <textarea name="target_content_legacy" id="advancedContent" placeholder="粘贴 HTML 代码..." style="min-height:200px;"></textarea>
-                <span class="text-muted">此模式仅按静态 HTML 输出；为防止远程代码执行，PHP 代码不会被执行。</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <label style="margin-bottom:0;">目标页面内容 (HTML)</label>
+                    <div style="display:flex;gap:4px;">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="generateFormHTML()" title="从可视化构建器生成 HTML">🔄 构建器→HTML</button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="parseHTMLtoBuilder()" title="从 HTML 代码同步到可视化构建器">📋 HTML→构建器</button>
+                    </div>
+                </div>
+                <textarea name="target_content_legacy" id="advancedContent" placeholder="点击「构建器→HTML」从可视化生成，粘贴代码后点击「HTML→构建器」同步..." style="min-height:320px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;"></textarea>
+                <span class="text-muted">点击「构建器→HTML」手动生成代码，点击「HTML→构建器」后自动跳转可视化预览。</span>
+                <div id="parseToast" style="display:none;margin-top:8px;padding:8px 12px;background:#e6f9ed;color:#155724;border-radius:6px;font-size:12px;font-weight:600;">✅ 解析成功，请查看可视化构建器预览</div>
             </div>
         </div>
 
@@ -343,8 +350,135 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         const tab = this.dataset.tab;
         document.getElementById('tab-visual').style.display = tab === 'visual' ? 'block' : 'none';
         document.getElementById('tab-advanced').style.display = tab === 'advanced' ? 'block' : 'none';
+        if (tab === 'visual') parseHTMLtoBuilder();
     });
 });
+
+// ── Generate static HTML from form builder config ──
+function generateFormHTML() {
+    var cfg = buildConfig();
+    var fieldsHTML = '';
+    cfg.fields.forEach(function(f) {
+        var req = f.required ? ' required' : '';
+        var ph = (f.placeholder || '').replace(/"/g, '&quot;');
+        var dv = (f.default_value || '').replace(/"/g, '&quot;');
+        if (f.type === 'textarea') {
+            fieldsHTML += '        <label>' + f.label + '</label>\n';
+            fieldsHTML += '        <textarea name="' + f.name + '" placeholder="' + ph + '"' + req + '>' + dv + '</textarea>\n';
+        } else if (f.type === 'select') {
+            var opts = f.options || [];
+            fieldsHTML += '        <label>' + f.label + '</label>\n';
+            fieldsHTML += '        <select name="' + f.name + '"' + req + '>\n';
+            fieldsHTML += '          <option value="">' + (ph || '请选择') + '</option>\n';
+            opts.forEach(function(o) {
+                var sel = (o === dv) ? ' selected' : '';
+                fieldsHTML += '          <option value="' + o.replace(/"/g, '&quot;') + '"' + sel + '>' + o + '</option>\n';
+            });
+            fieldsHTML += '        </select>\n';
+        } else {
+            fieldsHTML += '        <label>' + f.label + '</label>\n';
+            fieldsHTML += '        <input type="' + f.type + '" name="' + f.name + '" placeholder="' + ph + '" value="' + dv + '"' + req + '>\n';
+        }
+    });
+
+    var html = '<!DOCTYPE html>\n<html lang="zh">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>' + cfg.title + '</title>\n';
+    html += '<style>\n*{box-sizing:border-box;margin:0;padding:0}\n';
+    html += 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(155deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}\n';
+    html += '.card{background:#fff;border-radius:16px;padding:32px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.15)}\n';
+    html += '.card h2{text-align:center;color:#333;margin-bottom:4px}\n';
+    html += '.subtitle{text-align:center;color:#888;font-size:13px;margin-bottom:24px}\n';
+    html += 'label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:4px;margin-top:14px}\n';
+    html += 'input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px}\n';
+    html += 'button{width:100%;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-top:20px}\n';
+    html += '</style>\n</head>\n<body>\n<div class="card">\n';
+    html += '  <h2>' + cfg.title + '</h2>\n';
+    if (cfg.subtitle) html += '  <p class="subtitle">' + cfg.subtitle + '</p>\n';
+    html += '  <form method="post">\n';
+    html += fieldsHTML;
+    html += '    <button type="submit">' + (cfg.submit_text || '提交') + '</button>\n';
+    html += '  </form>\n</div>\n</body>\n</html>';
+
+    document.getElementById('advancedContent').value = html;
+}
+
+// ── Parse static HTML back into form builder config ──
+function parseHTMLtoBuilder() {
+    var html = document.getElementById('advancedContent').value;
+    if (!html.trim()) return;
+
+    // Extract title from <title> or <h2>
+    var titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
+    var h2Match = html.match(/<h2>([\s\S]*?)<\/h2>/i);
+    var title = (titleMatch ? titleMatch[1].trim() : '') || (h2Match ? h2Match[1].trim() : '信息收集表');
+    document.getElementById('cfgTitle').value = title;
+
+    // Extract subtitle from .subtitle paragraph
+    var subMatch = html.match(/<p[^>]*class\s*=\s*["'][^"']*subtitle[^"']*["'][^>]*>([\s\S]*?)<\/p>/i);
+    document.getElementById('cfgSubtitle').value = subMatch ? subMatch[1].trim() : '';
+
+    // Extract submit button text
+    var btnMatch = html.match(/<button[^>]*type\s*=\s*["']submit["'][^>]*>([\s\S]*?)<\/button>/i);
+    if (btnMatch) document.getElementById('cfgSubmit').value = btnMatch[1].trim();
+
+    // Parse fields — simpler regex: match <label>...</label> followed by the next tag
+    var fields = [];
+    var labelRegex = /<label>([\s\S]*?)<\/label>\s*<(input|textarea|select)\b([^>]*?)>/gi;
+    var match;
+    while ((match = labelRegex.exec(html)) !== null) {
+        var label = match[1].trim();
+        var tagType = match[2].toLowerCase();
+        var attrs = match[3] || '';
+
+        var name = (attrs.match(/name\s*=\s*["']([^"']*)["']/i) || [])[1] || ('field_' + (fields.length + 1));
+        var type = (attrs.match(/type\s*=\s*["']([^"']*)["']/i) || [])[1] || 'text';
+        var placeholder = (attrs.match(/placeholder\s*=\s*["']([^"']*)["']/i) || [])[1] || '';
+        var required = /required/i.test(attrs);
+        var defaultValue = (attrs.match(/value\s*=\s*["']([^"']*)["']/i) || [])[1] || '';
+
+        if (tagType === 'textarea') {
+            type = 'textarea';
+            // Grab content between <textarea...> and </textarea>
+            var taEnd = html.indexOf('</textarea>', match.index + match[0].length);
+            if (taEnd > 0) {
+                defaultValue = html.substring(match.index + match[0].length, taEnd).trim();
+            }
+        } else if (tagType === 'select') {
+            type = 'select';
+            var selEnd = html.indexOf('</select>', match.index + match[0].length);
+            var selContent = '';
+            if (selEnd > 0) {
+                selContent = html.substring(match.index + match[0].length, selEnd);
+            }
+            var options = [];
+            var optRegex = /<option[^>]*value\s*=\s*["']([^"']+)["'][^>]*>/gi;
+            var optMatch;
+            while ((optMatch = optRegex.exec(selContent)) !== null) {
+                options.push(optMatch[1]);
+            }
+            // Find selected value
+            var selMatch = selContent.match(/<option[^>]*selected[^>]*>([\s\S]*?)<\/option>/i);
+            if (selMatch) defaultValue = selMatch[1].trim();
+            if (!defaultValue && options.length > 0) defaultValue = options[0];
+            fields.push({ name: name, label: label, type: 'select', required: required, placeholder: placeholder, default_value: defaultValue, options: options });
+            continue;
+        }
+
+        fields.push({ name: name, label: label, type: type, required: required, placeholder: placeholder, default_value: defaultValue });
+    }
+
+    if (fields.length > 0) {
+        document.getElementById('fieldsContainer').innerHTML = '';
+        fields.forEach(function(f) { addField(f); });
+        // Auto-switch to visual tab and show toast
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.className = 'btn btn-sm btn-outline tab-btn'; });
+        var visualBtn = document.querySelector('.tab-btn[data-tab="visual"]');
+        if (visualBtn) visualBtn.className = 'btn btn-sm btn-primary tab-btn';
+        document.getElementById('tab-visual').style.display = 'block';
+        document.getElementById('tab-advanced').style.display = 'none';
+        var toast = document.getElementById('parseToast');
+        if (toast) { toast.style.display = 'block'; setTimeout(function() { toast.style.display = 'none'; }, 3000); }
+    }
+}
 
 // ── Form submit handling ──
 document.getElementById('createForm').addEventListener('submit', function(e) {
