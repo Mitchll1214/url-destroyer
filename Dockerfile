@@ -1,12 +1,18 @@
-FROM php:8.2-apache
+# ── 国内镜像：通过 DaoCloud 代理拉取 Docker Hub 基础镜像 ──
+FROM docker.m.daocloud.io/library/php:8.2-apache
 
 # ── 时区设为北京时间 ──
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # ── 国内加速：替换 Debian apt 源为腾讯云镜像 ──
-RUN sed -i 's/deb.debian.org/mirrors.cloud.tencent.com/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
-    sed -i 's/deb.debian.org/mirrors.cloud.tencent.com/g' /etc/apt/sources.list
+RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i 's|http://deb.debian.org|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/debian.sources \
+        && sed -i 's|https://deb.debian.org|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/debian.sources; \
+    elif [ -f /etc/apt/sources.list ]; then \
+        sed -i 's|http://deb.debian.org|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list \
+        && sed -i 's|https://deb.debian.org|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list; \
+    fi
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite

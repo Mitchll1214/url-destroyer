@@ -58,8 +58,8 @@ adminHeader('访问统计 #' . $linkId, 'links');
     <div class="alert alert-success main-shell">✅ 访问日志已清空</div>
 <?php endif; ?>
 
-<!-- Link Summary -->
-<div class="stats-grid main-shell">
+<!-- Link Summary — row layout -->
+<div class="stats-row main-shell">
     <div class="stat-card">
         <div class="stat-value"><?= $link['access_count'] ?></div>
         <div class="stat-label">总访问次数</div>
@@ -69,12 +69,16 @@ adminHeader('访问统计 #' . $linkId, 'links');
         <div class="stat-label">日志条数</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" style="font-size:24px;word-break:break-all;"><?= htmlspecialchars($link['token']) ?></div>
+        <div class="stat-value"><?= $link['max_accesses'] ?></div>
+        <div class="stat-label">最多访问</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="font-size:22px;"><?= htmlspecialchars(substr($link['token'], 0, 12)) ?>…</div>
         <div class="stat-label">Token</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="font-size:16px;">
-            <span class="badge badge-<?= $link['status'] ?>"><?= ['active'=>'活跃','opened'=>'已打开','expired'=>'已过期'][$link['status']] ?></span>
+            <span class="badge badge-<?= $link['status'] ?>"><?= ['active'=>'未打开/已打开','draft'=>'草稿中','submitted'=>'已提交','expired'=>'已过期'][$link['status']] ?></span>
         </div>
         <div class="stat-label">状态</div>
     </div>
@@ -82,19 +86,21 @@ adminHeader('访问统计 #' . $linkId, 'links');
 
 <div class="card main-shell">
     <div class="card-header">🔗 链接详情</div>
+    <div class="table-wrap">
     <table class="kv-table">
         <tr><td>访问链接</td><td><div class="url-display"><?= htmlspecialchars(BASE_URL . '/access.php?token=' . $link['token']) ?></div></td></tr>
         <tr><td>创建时间</td><td><?= $link['created_at'] ?></td></tr>
         <tr><td>首次访问</td><td><?= $link['first_accessed_at'] ?: '尚未访问' ?></td></tr>
         <tr><td>过期时间</td><td><?= $link['expires_at'] ?: '未开始计时' ?></td></tr>
-        <tr><td>访问超时</td><td><?= $link['access_timeout'] ?> 秒 (<?= round($link['access_timeout']/60, 1) ?> 分钟)</td></tr>
-        <tr><td>绝对过期</td><td><?= $link['absolute_expiry_hours'] ?> 小时</td></tr>
-        <tr><td>最大次数</td><td><?= $link['max_accesses'] ?></td></tr>
+        <tr><td>超时设置</td><td><?= $link['access_timeout'] ?> 秒（约 <?= round($link['access_timeout']/60, 1) ?> 分钟）</td></tr>
+        <tr><td>绝对过期</td><td>创建后 <?= $link['absolute_expiry_hours'] ?> 小时自动失效</td></tr>
+        <tr><td>提交即失效</td><td><?= !empty($link['expire_on_submit']) ? '✅ 是' : '❌ 否' ?></td></tr>
     </table>
+    </div>
 </div>
 
-<!-- Form Preview -->
 <?php
+// Parse form config (used by draft preview and form preview below)
 $cfg = null;
 $tc = $link['target_content'];
 if (!empty(trim($tc))) {
@@ -103,7 +109,60 @@ if (!empty(trim($tc))) {
         $cfg = $decoded;
     }
 }
-if ($cfg):
+?>
+
+<!-- Draft data preview (only for draft status) -->
+<?php if ($link['status'] === 'draft'): ?>
+<?php
+$draftData = $db->prepare("SELECT form_data, updated_at FROM form_drafts WHERE token = :t");
+$draftData->execute([':t' => $link['token']]);
+$draft = $draftData->fetch();
+if ($draft && !empty($draft['form_data'])):
+    $draftFields = json_decode($draft['form_data'], true) ?: [];
+    // Build label map from form config
+    $labelMap = [];
+    if ($cfg) {
+        foreach ($cfg['fields'] as $f) {
+            $labelMap[$f['name']] = $f['label'];
+        }
+    }
+?>
+<?php
+$draftCount = 0;
+?>
+<details class="card main-shell" style="border-left:4px solid #1a56bb;">
+    <summary class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>📝 草稿数据预览 <span style="font-size:11px;color:#888;font-weight:400;">(点击展开)</span></span>
+        <span class="text-muted">最后更新：<?= htmlspecialchars($draft['updated_at']) ?></span>
+    </summary>
+    <p class="section-meta">用户正在填写中，尚未提交。以下为已保存的字段内容。</p>
+    <div class="table-wrap">
+    <table>
+        <thead><tr><th style="width:140px;">字段</th><th>已填写内容</th></tr></thead>
+        <tbody>
+        <?php foreach ($draftFields as $fieldName => $value):
+            if ($fieldName === 'token' || $fieldName === '__final_submit') continue;
+            $fieldLabel = $labelMap[$fieldName] ?? $fieldName;
+            $displayValue = is_string($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE);
+            if ($displayValue === '' || $displayValue === '[]') continue;
+        ?>
+        <tr>
+            <td><strong><?= htmlspecialchars($fieldLabel) ?></strong></td>
+            <td><?= htmlspecialchars($displayValue) ?></td>
+        </tr>
+        <?php endforeach; ?>
+        <?php if (empty(array_filter($draftFields, fn($v, $k) => $k !== 'token' && $k !== '__final_submit' && $v !== '' && $v !== '[]', ARRAY_FILTER_USE_BOTH))): ?>
+        <tr class="empty-row"><td colspan="2">暂无有效字段数据</td></tr>
+        <?php endif; ?>
+        </tbody>
+    </table>
+    </div>
+</details>
+<?php endif; ?>
+<?php endif; ?>
+
+<!-- Form Preview -->
+<?php if ($cfg):
 ?>
 <details class="card main-shell">
     <summary class="card-header">👁 表单预览 <span style="font-size:11px;color:#888;">(点击展开)</span></summary>

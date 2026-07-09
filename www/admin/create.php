@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $absExpiry   = (int)($_POST['absolute_expiry_hours'] ?? $defaultExpiry);
     $targetContent = $_POST['target_content'] ?? $defaultFormConfig;
     $maxAccesses = (int)($_POST['max_accesses'] ?? 1);
+    $expireOnSubmit = !empty($_POST['expire_on_submit']) ? 1 : 0;
 
     if ($campaign === '') {
         $error = '活动名称不能为空';
@@ -64,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '绝对过期时间不能少于 1 小时';
     } else {
         $stmt = $db->prepare("
-            INSERT INTO links (token, campaign_name, target_content, access_timeout, absolute_expiry_hours, max_accesses, status, created_at)
-            VALUES (:token, :campaign, :content, :timeout, :abs_expiry, :max_accesses, 'active', datetime('now', 'localtime'))
+            INSERT INTO links (token, campaign_name, target_content, access_timeout, absolute_expiry_hours, max_accesses, expire_on_submit, status, created_at)
+            VALUES (:token, :campaign, :content, :timeout, :abs_expiry, :max_accesses, :expire_on_submit, 'active', datetime('now', 'localtime'))
         ");
         for ($i = 0; $i < $count; $i++) {
             $token = bin2hex(random_bytes(16));
@@ -76,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':timeout'     => $timeout,
                 ':abs_expiry'  => $absExpiry,
                 ':max_accesses'=> $maxAccesses,
+                ':expire_on_submit' => $expireOnSubmit,
             ]);
             $createdLinks[] = ['id' => $db->lastInsertId(), 'token' => $token];
         }
@@ -120,6 +122,15 @@ adminHeader('创建链接', 'create');
             <div class="form-group">
                 <label>最大访问次数 (默认 1 = 打开即失效)</label>
                 <input type="number" name="max_accesses" value="1" min="1" max="100" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;">
+                    <input type="checkbox" name="expire_on_submit" value="1" style="width:18px;height:18px;cursor:pointer;accent-color:#e94560;">
+                    <span>提交后立刻失效</span>
+                </label>
+                <span class="text-muted">勾选后，用户提交表单即马上过期，忽略超时和访问次数限制</span>
             </div>
         </div>
         <div class="form-row">

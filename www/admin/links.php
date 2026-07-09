@@ -23,7 +23,7 @@ if (isset($_POST['reactivate_id'])) {
     $link->execute([':id'=>$rid]);
     $link = $link->fetch();
     if ($link && time() <= strtotime($link['created_at']) + (int)$link['absolute_expiry_hours'] * 3600) {
-        $db->prepare("UPDATE links SET status='active', first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=1 WHERE id=:id")
+        $db->prepare("UPDATE links SET status='active', first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=2, expire_on_submit=0 WHERE id=:id")
            ->execute([':id'=>$rid]);
         $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'reactivate', '链接被重新打开', datetime('now','localtime'))")
            ->execute([':id'=>$rid]);
@@ -46,7 +46,7 @@ if (isset($_POST['expire_id'])) {
 $deleted = isset($_GET['deleted']);
 $edited  = isset($_GET['edited']);
 
-// Filters
+// Filters — composite status resolution
 $statusFilter = $_GET['status'] ?? '';
 $searchCampaign = trim($_GET['campaign'] ?? '');
 $dateFrom = $_GET['date_from'] ?? '';
@@ -56,9 +56,16 @@ $perPage = 20;
 
 $where = [];
 $params = [];
-if ($statusFilter && in_array($statusFilter, ['active', 'expired', 'opened'])) {
-    $where[] = "status = :status";
-    $params[':status'] = $statusFilter;
+if ($statusFilter === 'unopened') {
+    $where[] = "status='active' AND first_accessed_at IS NULL";
+} elseif ($statusFilter === 'opened') {
+    $where[] = "status='active' AND first_accessed_at IS NOT NULL";
+} elseif ($statusFilter === 'draft') {
+    $where[] = "status='draft'";
+} elseif ($statusFilter === 'submitted') {
+    $where[] = "status='submitted'";
+} elseif ($statusFilter === 'expired') {
+    $where[] = "status='expired'";
 }
 if ($searchCampaign !== '') {
     $where[] = "campaign_name LIKE :campaign";
@@ -111,8 +118,10 @@ adminHeader('链接列表', 'links');
     <div class="toolbar-row">
         <div class="chip-group">
             <a href="links.php" class="btn btn-sm <?= $statusFilter==='' ? 'btn-primary' : 'btn-outline' ?>">全部</a>
-            <a href="links.php?status=active" class="btn btn-sm <?= $statusFilter==='active' ? 'btn-primary' : 'btn-outline' ?>">活跃</a>
+            <a href="links.php?status=unopened" class="btn btn-sm <?= $statusFilter==='unopened' ? 'btn-primary' : 'btn-outline' ?>">未打开</a>
             <a href="links.php?status=opened" class="btn btn-sm <?= $statusFilter==='opened' ? 'btn-primary' : 'btn-outline' ?>">已打开</a>
+            <a href="links.php?status=draft" class="btn btn-sm <?= $statusFilter==='draft' ? 'btn-primary' : 'btn-outline' ?>">草稿</a>
+            <a href="links.php?status=submitted" class="btn btn-sm <?= $statusFilter==='submitted' ? 'btn-primary' : 'btn-outline' ?>">已提交</a>
             <a href="links.php?status=expired" class="btn btn-sm <?= $statusFilter==='expired' ? 'btn-primary' : 'btn-outline' ?>">已过期</a>
         </div>
         <span class="text-muted">共 <?= $total ?> 条</span>
@@ -125,8 +134,14 @@ adminHeader('链接列表', 'links');
         </tr></thead>
         <tbody>
         <?php foreach ($links as $row):
-            $statusLabel = ['active'=>'活跃','opened'=>'已打开','expired'=>'已过期'][$row['status']] ?? $row['status'];
-            $statusClass = 'badge-' . $row['status'];
+            // Resolve display state
+            if ($row['status'] === 'active') {
+                $displayState = empty($row['first_accessed_at']) ? 'unopened' : 'opened';
+            } else {
+                $displayState = $row['status'];
+            }
+            $statusLabel = ['unopened'=>'未打开','opened'=>'已打开','draft'=>'草稿中','submitted'=>'已提交','expired'=>'已过期'][$displayState] ?? $displayState;
+            $statusClass = 'badge-' . $displayState;
             // Check if absolutely expired (beyond absolute_expiry_hours from created_at)
             $absExpiryHours = (int)$row['absolute_expiry_hours'];
             $absDeadline = strtotime($row['created_at']) + $absExpiryHours * 3600;

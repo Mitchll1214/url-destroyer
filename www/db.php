@@ -69,8 +69,24 @@ function initSchema(PDO $pdo): void {
         )
     ");
 
+    // Form drafts — save partial form progress
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS form_drafts (
+            token       TEXT PRIMARY KEY,
+            form_data   TEXT NOT NULL DEFAULT '{}',
+            updated_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+    ");
+
     // Insert default settings if not present
     $stmt = $pdo->prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
     $stmt->execute(['default_access_timeout', DEFAULT_ACCESS_TIMEOUT]);
     $stmt->execute(['default_absolute_expiry_hours', DEFAULT_ABSOLUTE_EXPIRY_HOURS]);
+
+    // Schema migration: expire_on_submit flag
+    try {
+        $pdo->exec("ALTER TABLE links ADD COLUMN expire_on_submit INTEGER NOT NULL DEFAULT 0");
+    } catch (PDOException $e) {
+        // Column already exists
+    }
 }

@@ -55,13 +55,19 @@ adminHeader('管理仪表盘', 'dashboard');
         <?php
         $recent = $db->query("SELECT * FROM links ORDER BY id DESC LIMIT 10");
         foreach ($recent as $row):
-            $statusClass = 'badge-' . ($row['status'] === 'active' ? 'active' : ($row['status'] === 'opened' ? 'opened' : 'expired'));
+            if ($row['status'] === 'active') {
+                $displayState = empty($row['first_accessed_at']) ? 'unopened' : 'opened';
+            } else {
+                $displayState = $row['status'];
+            }
+            $statusLabel = ['unopened'=>'未打开','opened'=>'已打开','draft'=>'草稿中','submitted'=>'已提交','expired'=>'已过期'][$displayState] ?? $row['status'];
+            $statusClass = 'badge-' . $displayState;
         ?>
         <tr>
             <td>#<?= $row['id'] ?></td>
             <td><?= htmlspecialchars($row['campaign_name'] ?: '-') ?></td>
             <td><code><?= htmlspecialchars($row['token']) ?></code></td>
-            <td><span class="badge <?= $statusClass ?>"><?= $row['status'] ?></span></td>
+            <td><span class="badge <?= $statusClass ?>"><?= $statusLabel ?></span></td>
             <td><?= $row['access_count'] ?></td>
             <td><?= $row['created_at'] ?></td>
             <td>

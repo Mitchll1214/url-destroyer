@@ -43,58 +43,87 @@ if ($now > $absDeadline) {
 
 $isPost = ($_SERVER['REQUEST_METHOD'] === 'POST');
 
-// ── First access: start the countdown ──
-if ($link['first_accessed_at'] === null) {
+// ── Autosave endpoint (silent, JSON response) ──
+if ($isPost && empty($_POST['__final_submit'])) {
+    $postCopy = $_POST;
+    unset($postCopy['token']);
+    $db->prepare("INSERT OR REPLACE INTO form_drafts (token, form_data, updated_at) VALUES (:t, :d, datetime('now', 'localtime'))")
+       ->execute([':t' => $token, ':d' => json_encode($postCopy, JSON_UNESCAPED_UNICODE)]);
+    // Upgrade from active to draft on first autosave
+    if ($link['status'] === 'active') {
+        $db->prepare("UPDATE links SET status='draft' WHERE id=:id")->execute([':id' => $link['id']]);
+    }
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => true, 'saved_at' => date('Y-m-d H:i:s')]);
+    exit;
+}
+
+// ── Load draft (for pre-populating form) ──
+$draft = $db->prepare("SELECT form_data FROM form_drafts WHERE token = :t");
+$draft->execute([':t' => $token]);
+$draftData = json_decode($draft->fetchColumn() ?: '{}', true) ?: [];
+
+// ── First access: start countdown (opening is free, only submit counts) ──
+if ($link['first_accessed_at'] === null && $link['status'] === 'active') {
     $timeoutSeconds = (int)$link['access_timeout'];
     $expiresAt = (clone $now)->modify("+{$timeoutSeconds} seconds")->format('Y-m-d H:i:s');
-
-    // Only count the first GET as an "access"; POST on first hit is edge-case but count it too
-    $db->prepare("UPDATE links SET first_accessed_at=datetime('now', 'localtime'), expires_at=:exp, status='opened', access_count=1 WHERE id=:id")
-       ->execute([':exp'=>$expiresAt, ':id'=>$link['id']]);
-    $link['status'] = 'opened';
-    $link['access_count'] = 1;
+    $db->prepare("UPDATE links SET first_accessed_at=datetime('now', 'localtime'), expires_at=:exp WHERE id=:id")
+       ->execute([':exp' => $expiresAt, ':id' => $link['id']]);
     $link['first_accessed_at'] = $now->format('Y-m-d H:i:s');
-} else {
-    // ── Subsequent access: always check timeout ──
+}
+
+// ── Check timeout (applies to active/draft/submitted) ──
+if ($link['first_accessed_at'] !== null && $link['expires_at'] !== null) {
     $expiresAt = new DateTime($link['expires_at']);
-    if ($now > $expiresAt) {
-        $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id'=>$link['id']]);
+    if ($now > $expiresAt && $link['status'] !== 'expired') {
+        $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
+        $link['status'] = 'expired';
+    }
+}
+
+// ── Max access check for every GET (including draft reloads) ──
+if (!$isPost) {
+    if ($link['access_count'] >= $link['max_accesses']) {
+        $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
+        showError('此链接已达到最大访问次数，已自动失效。');
+    }
+    $db->prepare("UPDATE links SET access_count=access_count+1 WHERE id=:id")->execute([':id' => $link['id']]);
+    $link['access_count']++;
+}
+
+// ── Final submit (POST with __final_submit=1) ──
+$submitted = false;
+if ($isPost && !empty($_POST['__final_submit'])) {
+    if ($link['status'] === 'expired') {
         showError('此链接已超过访问后有效时间，已自动失效。');
     }
-
-    // POST (form submission): don't count against max_accesses, just check timeout above
-    // GET (page reload / re-open): enforce max_accesses and increment
-    if (!$isPost) {
-        if ($link['access_count'] >= $link['max_accesses']) {
-            $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id'=>$link['id']]);
-            showError('此链接已达到最大访问次数，已自动失效。');
-        }
-        $db->prepare("UPDATE links SET access_count=access_count+1 WHERE id=:id")->execute([':id'=>$link['id']]);
-        $link['access_count']++;
-    }
-}
-
-// ── Log the access ──
-$ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-$ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-$ref = $_SERVER['HTTP_REFERER'] ?? '';
-
-// Capture form data if POST
-$formData = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
+    // Log access first
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $ref = $_SERVER['HTTP_REFERER'] ?? '';
     $postCopy = $_POST;
-    unset($postCopy['token']); // don't log the token itself
+    unset($postCopy['token'], $postCopy['__final_submit']);
     $formData = json_encode($postCopy, JSON_UNESCAPED_UNICODE);
+    $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, referer, form_data, accessed_at) VALUES (:lid, :ip, :ua, :ref, :fd, datetime('now', 'localtime'))")
+       ->execute([':lid' => $link['id'], ':ip' => $ip, ':ua' => $ua, ':ref' => $ref, ':fd' => $formData]);
+
+    // Transition: draft → submitted (or expired if expire_on_submit=1)
+    if (!empty($link['expire_on_submit'])) {
+        $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
+    } else {
+        $db->prepare("UPDATE links SET status='submitted' WHERE id=:id")->execute([':id' => $link['id']]);
+    }
+
+    // Delete draft after successful submit
+    $db->prepare("DELETE FROM form_drafts WHERE token = :t")->execute([':t' => $token]);
+
+    $submitted = true;
 }
 
-$logStmt = $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, referer, form_data, accessed_at) VALUES (:lid, :ip, :ua, :ref, :fd, datetime('now', 'localtime'))");
-$logStmt->execute([
-    ':lid' => $link['id'],
-    ':ip'  => $ip,
-    ':ua'  => $ua,
-    ':ref' => $ref,
-    ':fd'  => $formData,
-]);
+// ── Error for expired status on GET ──
+if (!$isPost && $link['status'] === 'expired') {
+    showError('此链接已超过访问后有效时间，已自动失效。');
+}
 
 // ── Render target content ──
 $content = $link['target_content'];
@@ -110,13 +139,11 @@ if (!empty(trim($content))) {
 
 if ($formConfig) {
     // ── Dynamic form builder rendering ──
-    renderFormBuilder($formConfig, $token, $isPost);
+    renderFormBuilder($formConfig, $token, $submitted, $draftData);
 } else {
     // ── Legacy static HTML rendering ──
-    // SECURITY: never execute stored content as PHP. Existing legacy PHP blocks are stripped
-    // before output so stored content cannot become remote code execution.
     if (empty(trim($content))) {
-        renderDefaultForm($token, $isPost);
+        renderDefaultForm($token, $submitted, $draftData);
     } else {
         renderStaticHtmlContent($content);
     }
@@ -130,7 +157,7 @@ function renderStaticHtmlContent(string $content): void {
 }
 
 // ── Helper: render fallback form ──
-function renderDefaultForm(string $token, bool $submitted): void {
+function renderDefaultForm(string $token, bool $submitted, array $draftData = []): void {
     renderFormBuilder([
         'type' => 'form_builder',
         'title' => '信息收集表',
@@ -144,17 +171,20 @@ function renderDefaultForm(string $token, bool $submitted): void {
             ['name' => 'phone', 'label' => '手机号', 'type' => 'tel',      'required' => false, 'placeholder' => '请输入手机号', 'default_value' => ''],
             ['name' => 'note',  'label' => '备注',   'type' => 'textarea', 'required' => false, 'placeholder' => '其他想说的话...', 'default_value' => ''],
         ],
-    ], $token, $submitted);
+    ], $token, $submitted, $draftData);
 }
 
 // ── Helper: render form builder ──
-function renderFormBuilder(array $cfg, string $token, bool $submitted): void {
+function renderFormBuilder(array $cfg, string $token, bool $submitted, array $draftData = []): void {
     $title   = htmlspecialchars($cfg['title'] ?? '信息收集表');
     $subtitle= htmlspecialchars($cfg['subtitle'] ?? '');
     $submit  = htmlspecialchars($cfg['submit_text'] ?? '提交');
     $okTitle = htmlspecialchars($cfg['success_title'] ?? '提交成功');
     $okText  = htmlspecialchars($cfg['success_text'] ?? '感谢您的参与，数据已记录。');
     $fields  = $cfg['fields'] ?? [];
+    $hasDraft = !empty($draftData);
+    $draftJS  = $hasDraft ? 'true' : 'false';
+    $draftJSON = json_encode($draftData, JSON_HEX_TAG | JSON_HEX_APOS);
     ?>
     <!DOCTYPE html>
     <html lang="zh">
@@ -163,31 +193,34 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted): void {
         <title><?= $title ?></title>
         <style>
             *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+            html{height:100%}
             body{
                 font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
                            "Helvetica Neue",Arial,"Noto Sans SC",sans-serif;
-                background:linear-gradient(155deg,#667eea 0%,#764ba2 50%,#5a3f8a 100%);
-                min-height:100vh;display:flex;align-items:center;justify-content:center;
-                padding:16px;-webkit-font-smoothing:antialiased;
-                position:relative;overflow:hidden;
+                background:linear-gradient(155deg,#667eea 0%,#764ba2 50%,#5a3f8a 100%) fixed;
+                min-height:100vh;min-height:100dvh;
+                display:flex;align-items:center;justify-content:center;
+                padding:24px 16px;-webkit-font-smoothing:antialiased;
+                position:relative;
+                overflow-y:auto;overflow-x:hidden;
             }
             body::before{
-                content:'';position:absolute;
+                content:'';position:fixed;
                 width:400px;height:400px;
                 background:radial-gradient(circle,rgba(255,255,255,.06),transparent 70%);
-                top:-120px;right:-80px;border-radius:50%;pointer-events:none;
+                top:-120px;right:-80px;border-radius:50%;pointer-events:none;z-index:0;
             }
             body::after{
-                content:'';position:absolute;
+                content:'';position:fixed;
                 width:300px;height:300px;
                 background:radial-gradient(circle,rgba(255,255,255,.05),transparent 70%);
-                bottom:-80px;left:-60px;border-radius:50%;pointer-events:none;
+                bottom:-80px;left:-60px;border-radius:50%;pointer-events:none;z-index:0;
             }
             .fb-container{
                 background:#fff;border-radius:20px;
                 padding:clamp(28px,5vw,44px);max-width:520px;width:100%;
                 box-shadow:0 28px 80px rgba(0,0,0,.22),0 0 0 1px rgba(255,255,255,.1);
-                position:relative;z-index:1;
+                position:relative;z-index:1;margin:auto 0;
                 animation:fbSlideIn .5s cubic-bezier(.22,.61,.36,1);
             }
             @keyframes fbSlideIn{
@@ -223,12 +256,24 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted): void {
                 font-size:16px;font-weight:700;cursor:pointer;
                 transition:all .25s;letter-spacing:.3px;
                 box-shadow:0 4px 16px rgba(102,126,234,.3);
+                -webkit-appearance:none;
             }
             .fb-submit:hover{
                 transform:translateY(-2px);
                 box-shadow:0 8px 24px rgba(102,126,234,.4);
             }
             .fb-submit:active{transform:translateY(0)}
+            /* ── Autosave indicator ── */
+            .autosave-indicator{
+                position:fixed;bottom:20px;right:20px;
+                background:#fff;color:#27ae60;font-size:12px;font-weight:600;
+                padding:8px 16px;border-radius:20px;
+                box-shadow:0 4px 16px rgba(0,0,0,.12);
+                opacity:0;transform:translateY(10px);
+                transition:opacity .3s,transform .3s;
+                pointer-events:none;z-index:999;
+            }
+            .autosave-indicator.show{opacity:1;transform:translateY(0)}
             .fb-success{
                 text-align:center;padding:28px 10px;
                 animation:successPop .5s cubic-bezier(.22,.61,.36,1);
@@ -254,10 +299,21 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted): void {
             }
             .fb-success h3{color:#1a1a2e;margin:0 0 6px;font-size:20px;font-weight:800}
             .fb-success p{color:#999;font-size:14px;line-height:1.6;max-width:300px;margin:0 auto}
-            @media(max-width:480px){
-                .fb-container{border-radius:14px;padding:24px 20px}
+            @media(max-width:640px){
+                body{padding:16px 12px;align-items:flex-start}
+                .fb-container{border-radius:16px;padding:24px 18px;margin:0}
+                .fb-container h2{font-size:20px}
+                .fb-subtitle{font-size:12px;margin-bottom:20px}
+                .fb-field{margin-bottom:16px}
+                .fb-field label{font-size:14px}
+                .fb-field input,.fb-field select,.fb-field textarea{
+                    padding:13px 14px;font-size:16px;border-radius:10px;
+                }
+                .fb-field textarea{min-height:120px}
+                .fb-submit{padding:16px;font-size:17px;border-radius:12px}
                 .fb-success{padding:20px 0}
                 .fb-success .icon-wrap{width:64px;height:64px;font-size:30px}
+                .autosave-indicator{bottom:12px;right:12px;font-size:11px;padding:6px 12px}
             }
         </style>
     </head>
@@ -274,7 +330,8 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted): void {
     <div class="fb-container">
         <h2><?= $title ?></h2>
         <?php if ($subtitle): ?><p class="fb-subtitle"><?= $subtitle ?></p><?php endif; ?>
-        <form method="post" action="?token=<?= htmlspecialchars($token) ?>">
+        <form method="post" action="?token=<?= htmlspecialchars($token) ?>" id="fbForm">
+            <input type="hidden" name="__final_submit" value="0" id="finalSubmitFlag">
             <?php foreach ($fields as $f):
                 $name  = htmlspecialchars($f['name'] ?? '');
                 $label = htmlspecialchars($f['label'] ?? $name);
@@ -283,26 +340,87 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted): void {
                 $ph    = htmlspecialchars($f['placeholder'] ?? '');
                 $dv    = htmlspecialchars($f['default_value'] ?? '');
                 $opts  = $f['options'] ?? [];
+                // Draft value takes priority over default_value
+                $val   = htmlspecialchars($draftData[$f['name']] ?? $f['default_value'] ?? '');
             ?>
             <div class="fb-field">
                 <label><?= $label ?><?= $req ? ' <span class="req">*</span>' : '' ?></label>
                 <?php if ($type === 'textarea'): ?>
-                    <textarea name="<?= $name ?>" placeholder="<?= $ph ?>" <?= $req ? 'required' : '' ?>><?= $dv ?></textarea>
+                    <textarea name="<?= $name ?>" placeholder="<?= $ph ?>" <?= $req ? 'required' : '' ?> data-field><?= $val ?></textarea>
                 <?php elseif ($type === 'select'): ?>
-                    <select name="<?= $name ?>" <?= $req ? 'required' : '' ?>>
+                    <select name="<?= $name ?>" <?= $req ? 'required' : '' ?> data-field>
                         <option value=""><?= $ph ?: '请选择' ?></option>
                         <?php foreach ($opts as $o): $ov = htmlspecialchars($o); ?>
-                        <option value="<?= $ov ?>" <?= ($o === ($f['default_value'] ?? '')) ? 'selected' : '' ?>><?= $ov ?></option>
+                        <option value="<?= $ov ?>" <?= ($o === ($draftData[$f['name']] ?? $f['default_value'] ?? '')) ? 'selected' : '' ?>><?= $ov ?></option>
                         <?php endforeach; ?>
                     </select>
                 <?php else: ?>
-                    <input type="<?= $type ?>" name="<?= $name ?>" placeholder="<?= $ph ?>" value="<?= $dv ?>" <?= $req ? 'required' : '' ?>>
+                    <input type="<?= $type ?>" name="<?= $name ?>" placeholder="<?= $ph ?>" value="<?= $val ?>" <?= $req ? 'required' : '' ?> data-field>
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>
-            <button type="submit" class="fb-submit">📤 <?= $submit ?></button>
+            <button type="submit" class="fb-submit" id="submitBtn">📤 <?= $submit ?></button>
         </form>
+        <div class="autosave-indicator" id="autosaveIndicator">✅ 草稿已保存</div>
     </div>
+    <script>
+    (function(){
+        var form = document.getElementById('fbForm');
+        var flag = document.getElementById('finalSubmitFlag');
+        var btn = document.getElementById('submitBtn');
+        var indicator = document.getElementById('autosaveIndicator');
+        var token = <?= json_encode($token) ?>;
+        var timer = null;
+        var lastSaved = '';
+
+        // Use form submit event instead of button click — more reliable
+        form.addEventListener('submit', function(e){
+            flag.value = '1';
+            clearTimeout(timer);
+            btn.disabled = true;
+            btn.textContent = '⏳ 提交中...';
+        });
+
+        function showIndicator(text){
+            indicator.textContent = text || '✅ 草稿已保存';
+            indicator.classList.add('show');
+            clearTimeout(indicator._hideTimer);
+            indicator._hideTimer = setTimeout(function(){ indicator.classList.remove('show'); }, 2000);
+        }
+
+        function autosave(){
+            // Don't autosave if form is being submitted
+            if (flag.value === '1') return;
+            var fd = new FormData(form);
+            fd.set('__final_submit', '0');
+            var payload = new URLSearchParams(fd).toString();
+            if (payload === lastSaved) return;
+            lastSaved = payload;
+            fetch('?token=' + encodeURIComponent(token), {
+                method:'POST', body:fd
+            }).then(function(r){ return r.json(); })
+              .then(function(data){
+                  if (data && data.ok) showIndicator();
+              });
+        }
+
+        // Debounced autosave on any field change
+        form.querySelectorAll('[data-field]').forEach(function(el){
+            el.addEventListener('input', function(){
+                clearTimeout(timer);
+                timer = setTimeout(autosave, 1500);
+            });
+            el.addEventListener('change', function(){
+                clearTimeout(timer);
+                timer = setTimeout(autosave, 1500);
+            });
+        });
+
+        <?php if ($hasDraft): ?>
+        showIndicator('📋 已恢复上次填写的内容');
+        <?php endif; ?>
+    })();
+    </script>
     <?php endif; ?>
     </body></html>
     <?php

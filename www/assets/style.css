@@ -519,6 +519,18 @@ details.card summary::-webkit-details-marker { display: none; }
     margin-bottom: 28px;
 }
 
+.stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.stats-row .stat-card {
+    flex: 1 1 0;
+    min-width: 160px;
+}
+
 .stat-card {
     background: var(--card-bg);
     border-radius: var(--radius-lg);
@@ -846,6 +858,31 @@ tbody .empty-row td {
 .badge-opened {
     background: #fff6e0;
     color: #b37400;
+}
+
+.badge-draft {
+    background: #e8f0fe;
+    color: #1a56bb;
+}
+
+.badge-submitted {
+    background: #fff6e0;
+    color: #b37400;
+}
+
+.badge-submit_expired {
+    background: #fde8eb;
+    color: #b71c3b;
+}
+
+.badge-unopened {
+    background: #f4f4f8;
+    color: #6e6e7e;
+}
+
+.badge-opened {
+    background: #e6f9ed;
+    color: #1a7a3a;
 }
 
 /* ================================================================
