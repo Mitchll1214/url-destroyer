@@ -161,29 +161,31 @@ adminHeader('链接列表', 'links');
             <td><?= $row['first_accessed_at'] ?: '-' ?></td>
             <td><?= $row['expires_at'] ?: '未开始计时' ?></td>
             <td>
+                <div class="table-actions">
                 <a href="stats.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline">统计</a>
                 <?php if (!empty(trim($row['target_content']))): ?>
                 <a href="create.php?copy_from=<?= $row['id'] ?>" class="btn btn-sm btn-outline" title="基于此配置创建新链接">📋</a>
                 <?php endif; ?>
                 <?php if ($row['status'] === 'expired'): ?>
                     <?php if ($isAbsolutelyExpired): ?>
-                    <span class="badge" style="background:#eee;color:#999;font-size:10px;">已永久过期</span>
+                    <span class="badge" style="background:#eee;color:#999;font-size:10px;">永久过期</span>
                     <?php else: ?>
-                    <form method="post" style="display:inline" onsubmit="return confirm('确定重新打开此链接？最大访问次数将重置为1。')">
+                    <form method="post" onsubmit="return confirm('确定重新打开此链接？')">
                         <input type="hidden" name="reactivate_id" value="<?= $row['id'] ?>">
-                        <button type="submit" class="btn btn-sm btn-primary" style="background:#27ae60;">🔄 重新打开</button>
+                        <button type="submit" class="btn btn-sm btn-primary" style="background:#27ae60;">🔄 重开</button>
                     </form>
                     <?php endif; ?>
                 <?php else: ?>
-                <form method="post" style="display:inline" onsubmit="return confirm('确定将此链接置为已过期？')">
-                    <input type="hidden" name="expire_id" value="<?= $row['id'] ?>">
-                    <button type="submit" class="btn btn-sm btn-outline" style="color:#e94560;border-color:#e94560;">⏹ 置已过期</button>
-                </form>
+                    <form method="post" onsubmit="return confirm('确定将此链接置为已过期？')">
+                        <input type="hidden" name="expire_id" value="<?= $row['id'] ?>">
+                        <button type="submit" class="btn btn-sm btn-outline" style="color:#e94560;border-color:#e94560;">⏹ 过期</button>
+                    </form>
                 <?php endif; ?>
-                <form method="post" style="display:inline" onsubmit="return confirm('确定删除此链接及所有访问记录？此操作不可撤销。')">
+                <form method="post" onsubmit="return confirm('确定删除此链接及所有访问记录？此操作不可撤销。')">
                     <input type="hidden" name="delete_id" value="<?= $row['id'] ?>">
                     <button type="submit" class="btn btn-sm btn-danger">删除</button>
                 </form>
+                </div>
             </td>
         </tr>
         <?php endforeach; ?>

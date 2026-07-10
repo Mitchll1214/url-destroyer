@@ -145,7 +145,10 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
             <div class="breadcrumb">管理后台 <span class="breadcrumb-sep">/</span> <span><?= htmlspecialchars($title) ?></span></div>
             <div class="topbar-spacer"></div>
             <div class="topbar-actions">
-                <a href="?logout=1" class="logout-btn">🚪 退出</a>
+                <a href="?logout=1" class="logout-btn">
+                    <svg class="logout-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    退出
+                </a>
             </div>
         </div>
         <div class="main-inner">
