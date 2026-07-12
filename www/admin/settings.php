@@ -28,11 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Update default timeout
+    // Update default timeout (前端输入小时，存储为秒)
     if (isset($_POST['default_access_timeout'])) {
-        $timeout = max(10, (int)$_POST['default_access_timeout']);
+        $timeoutHours = max(0.1, (float)$_POST['default_access_timeout']);
+        $timeoutSeconds = (int)($timeoutHours * 3600);
         $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_access_timeout', :v)")
-           ->execute([':v' => $timeout]);
+           ->execute([':v' => $timeoutSeconds]);
     }
 
     // Update default absolute expiry
@@ -47,9 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load current values
-$currentTimeout = $db->query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: 600;
-$currentExpiry  = $db->query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: 24;
+// Load current values (优先级：数据库 > 环境变量 > config.php 常量)
+$currentTimeout = $db->query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: DEFAULT_ACCESS_TIMEOUT;
+$currentExpiry  = $db->query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: DEFAULT_ABSOLUTE_EXPIRY_HOURS;
+// 前端显示用：超时秒数转为小时
+$currentTimeoutHours = round($currentTimeout / 3600, 1);
 
 adminHeader('系统设置', 'settings');
 ?>
@@ -62,18 +65,18 @@ adminHeader('系统设置', 'settings');
 
 <div class="card main-shell">
     <div class="card-header">🕐 默认过期配置</div>
-    <p class="section-meta">这些默认值将在创建新链接时预填，每个链接可单独覆盖。</p>
+    <p class="section-meta">这些默认值将在创建新链接时预填，每个链接可单独覆盖。<br>💡 通过 Docker 环境变量 <code>DEFAULT_ACCESS_TIMEOUT</code>（小时）和 <code>DEFAULT_ABSOLUTE_EXPIRY_HOURS</code>（小时）可设置初始值，重建容器不丢失。</p>
     <form method="post">
         <div class="form-row">
             <div class="form-group">
-                <label>首次访问后超时 (秒)</label>
-                <input type="number" name="default_access_timeout" value="<?= $currentTimeout ?>" min="10" required>
-                <span class="text-muted">默认 <?= $currentTimeout ?> 秒 ≈ <?= round($currentTimeout/60, 1) ?> 分钟</span>
+                <label>首次访问后超时 (小时)</label>
+                <input type="number" name="default_access_timeout" value="<?= $currentTimeoutHours ?>" min="0.1" step="any" required>
+                <span class="text-muted">默认 <?= $currentTimeoutHours ?> 小时 ≈ <?= round($currentTimeout/86400, 1) ?> 天</span>
             </div>
             <div class="form-group">
                 <label>未打开自动过期 (小时)</label>
                 <input type="number" name="default_absolute_expiry_hours" value="<?= $currentExpiry ?>" min="1" required>
-                <span class="text-muted">默认 <?= $currentExpiry ?> 小时</span>
+                <span class="text-muted">默认 <?= $currentExpiry ?> 小时 ≈ <?= round($currentExpiry/24, 1) ?> 天</span>
             </div>
         </div>
         <button type="submit" class="btn btn-primary">💾 保存设置</button>
@@ -82,7 +85,7 @@ adminHeader('系统设置', 'settings');
 
 <div class="card main-shell">
     <div class="card-header">🔑 修改管理员密码</div>
-    <p class="section-meta">修改后即时生效。默认初始密码：<code><?= htmlspecialchars(ADMIN_PASSWORD) ?></code></p>
+    <p class="section-meta">修改后即时生效。初始密码来源：环境变量 <code>ADMIN_PASSWORD</code> > 默认值 <code><?= htmlspecialchars(ADMIN_PASSWORD) ?></code><br>💡 在 Docker 中设置 <code>ADMIN_PASSWORD</code> 环境变量可永久固定初始密码。</p>
     <form method="post">
         <input type="hidden" name="change_password" value="1">
         <div class="form-row">

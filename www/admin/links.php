@@ -130,7 +130,7 @@ adminHeader('链接列表', 'links');
     <div class="table-wrap">
     <table>
         <thead><tr>
-            <th>ID</th><th>活动</th><th>Token</th><th>状态</th><th>访问</th><th>超时(s)</th><th>创建时间</th><th>首次访问</th><th>过期时间</th><th>操作</th>
+            <th>ID</th><th>活动</th><th>Token</th><th>状态</th><th>访问</th><th>超时</th><th>创建时间</th><th>首次访问</th><th>过期时间</th><th>操作</th>
         </tr></thead>
         <tbody>
         <?php foreach ($links as $row):
@@ -156,7 +156,7 @@ adminHeader('链接列表', 'links');
             </td>
             <td><span class="badge <?= $statusClass ?>"><?= $statusLabel ?></span></td>
             <td><?= $row['access_count'] ?>/<?= $row['max_accesses'] ?></td>
-            <td><?= $row['access_timeout'] ?></td>
+            <td><?php $ts = (int)$row['access_timeout']; echo $ts >= 3600 ? round($ts/3600,1).'h' : round($ts/60).'min'; ?></td>
             <td><?= $row['created_at'] ?></td>
             <td><?= $row['first_accessed_at'] ?: '-' ?></td>
             <td><?= $row['expires_at'] ?: '未开始计时' ?></td>

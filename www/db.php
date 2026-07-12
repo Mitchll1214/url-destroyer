@@ -29,7 +29,7 @@ function initSchema(PDO $pdo): void {
             token       TEXT    NOT NULL UNIQUE,
             campaign_name TEXT  NOT NULL DEFAULT '',
             target_content TEXT NOT NULL DEFAULT '',
-            access_timeout    INTEGER NOT NULL DEFAULT 600,
+            access_timeout    INTEGER NOT NULL DEFAULT 86400,
             absolute_expiry_hours INTEGER NOT NULL DEFAULT 24,
             max_accesses INTEGER NOT NULL DEFAULT 1,
             access_count INTEGER NOT NULL DEFAULT 0,

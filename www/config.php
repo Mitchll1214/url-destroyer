@@ -1,28 +1,49 @@
 <?php
 /**
  * Global Configuration
+ *
+ * 优先级：数据库 settings 表 > 环境变量 > 本文件常量
+ * 通过 Docker 环境变量设置后，即使重建容器也不会丢失配置。
+ * docker-compose.yml 示例：
+ *   environment:
+ *     - ADMIN_PASSWORD=my-secure-pw
+ *     - DEFAULT_ACCESS_TIMEOUT=1800
+ *     - DEFAULT_ABSOLUTE_EXPIRY_HOURS=72
+ *     - BASE_URL=https://your-domain.com
  */
 
 // Timezone — 北京时间
 date_default_timezone_set('Asia/Shanghai');
 
-// Admin password (change in production!)
-define('ADMIN_PASSWORD', 'admin123');
+/**
+ * 从环境变量读取值，不存在则返回默认值
+ */
+function env(string $name, mixed $default = null): mixed {
+    $value = getenv($name);
+    if ($value === false || $value === '') {
+        return $default;
+    }
+    return $value;
+}
 
-// Admin URL path — customize to hide the backend entrance (e.g. 'my-secret-panel')
-define('ADMIN_PATH', 'admin');
+// Admin password — 环境变量优先于硬编码默认值
+define('ADMIN_PASSWORD', env('ADMIN_PASSWORD', 'admin123'));
 
-// Default settings — can be overridden via admin/settings.php
-define('DEFAULT_ACCESS_TIMEOUT', 600);      // 10 minutes after first access
-define('DEFAULT_ABSOLUTE_EXPIRY_HOURS', 24); // 24 hours from creation
+// Admin URL path — 支持环境变量覆盖
+define('ADMIN_PATH', env('ADMIN_PATH', 'admin'));
 
-// Database path
-define('DB_PATH', __DIR__ . '/../data/app.db');
+// Default settings — 环境变量优先于硬编码默认值
+define('DEFAULT_ACCESS_TIMEOUT', (int)((float)env('DEFAULT_ACCESS_TIMEOUT', '24') * 3600));  // hours → seconds
+define('DEFAULT_ABSOLUTE_EXPIRY_HOURS', (int)env('DEFAULT_ABSOLUTE_EXPIRY_HOURS', 168)); // 7 days
 
-// Site base URL — auto-detect (supports reverse proxy via X-Forwarded-Proto/Host)
-// 如果反向代理未传正确 Header，手动取消注释下面一行并填写你的域名：
-// define('BASE_URL', 'https://your-domain.com');
-if (!defined('BASE_URL')) {
+// Database path — 支持环境变量覆盖（例如将数据库放在持久卷中）
+define('DB_PATH', env('DB_PATH', __DIR__ . '/../data/app.db'));
+
+// Site base URL — 环境变量 > 自动检测
+$envBaseUrl = env('BASE_URL', '');
+if ($envBaseUrl !== '') {
+    define('BASE_URL', rtrim($envBaseUrl, '/'));
+} else {
     $scheme = (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
            || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
     $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';

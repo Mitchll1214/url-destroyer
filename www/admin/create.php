@@ -8,9 +8,11 @@ requireLogin();
 
 $db = getDB();
 
-// Load defaults from settings
-$defaultTimeout = (int)($db->query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: 600);
-$defaultExpiry  = (int)($db->query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: 24);
+// Load defaults from settings (优先级：数据库 > 环境变量 > config.php 常量)
+$defaultTimeout = (int)($db->query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: DEFAULT_ACCESS_TIMEOUT);
+$defaultExpiry  = (int)($db->query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: DEFAULT_ABSOLUTE_EXPIRY_HOURS);
+// 前端显示用：超时秒数转为小时
+$defaultTimeoutHours = round($defaultTimeout / 3600, 1);
 
 $createdLinks = [];
 $error = '';
@@ -49,7 +51,8 @@ $defaultFormConfig = json_encode([
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $campaign    = trim($_POST['campaign_name'] ?? '');
     $count       = (int)($_POST['count'] ?? 1);
-    $timeout     = (int)($_POST['access_timeout'] ?? $defaultTimeout);
+    $timeoutHours = (float)($_POST['access_timeout'] ?? ($defaultTimeout / 3600));
+    $timeout     = (int)($timeoutHours * 3600);
     $absExpiry   = (int)($_POST['absolute_expiry_hours'] ?? $defaultExpiry);
     $targetContent = $_POST['target_content'] ?? $defaultFormConfig;
     $maxAccesses = (int)($_POST['max_accesses'] ?? 1);
@@ -59,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '活动名称不能为空';
     } elseif ($count < 1 || $count > 500) {
         $error = '数量必须在 1 ~ 500 之间';
-    } elseif ($timeout < 10) {
-        $error = '访问后超时不能少于 10 秒';
+    } elseif ($timeout < 360) {
+        $error = '访问后超时不能少于 0.1 小时';
     } elseif ($absExpiry < 1) {
         $error = '绝对过期时间不能少于 1 小时';
     } else {
@@ -135,14 +138,14 @@ adminHeader('创建链接', 'create');
         </div>
         <div class="form-row">
             <div class="form-group">
-                <label>访问后超时 (秒)</label>
-                <input type="number" name="access_timeout" value="<?= $defaultTimeout ?>" min="10" required>
-                <span class="text-muted">首次访问后 <?= round($defaultTimeout/60,1) ?> 分钟失效</span>
+                <label>访问后超时 (小时)</label>
+                <input type="number" name="access_timeout" value="<?= $defaultTimeoutHours ?>" min="0.1" step="any" required>
+                <span class="text-muted">首次访问后 <?= $defaultTimeoutHours ?> 小时失效</span>
             </div>
             <div class="form-group">
                 <label>未打开自动过期 (小时)</label>
                 <input type="number" name="absolute_expiry_hours" value="<?= $defaultExpiry ?>" min="1" required>
-                <span class="text-muted">创建后超过此时间未访问则自动失效</span>
+                <span class="text-muted">创建后超过此时间未访问则自动失效（<?= round($defaultExpiry/24, 1) ?> 天）</span>
             </div>
         </div>
 
@@ -381,7 +384,7 @@ function generateFormHTML() {
         }
     });
 
-    var html = '<!DOCTYPE html>\n<html lang="zh">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>' + cfg.title + '</title>\n';
+    var html = '<!DOCTYPE html>\n<html lang="zh">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>' + cfg.title + '</title>\n<link rel="icon" type="image/svg+xml" href="favicon.svg">\n';
     html += '<style>\n*{box-sizing:border-box;margin:0;padding:0}\n';
     html += 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(155deg,#141824,#1a1f30,#1e2438,#161a28);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}\n';
     html += '.card{background:#fff;border-radius:16px;padding:32px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.15)}\n';

@@ -92,7 +92,7 @@ adminHeader('访问统计 #' . $linkId, 'links');
         <tr><td>创建时间</td><td><?= $link['created_at'] ?></td></tr>
         <tr><td>首次访问</td><td><?= $link['first_accessed_at'] ?: '尚未访问' ?></td></tr>
         <tr><td>过期时间</td><td><?= $link['expires_at'] ?: '未开始计时' ?></td></tr>
-        <tr><td>超时设置</td><td><?= $link['access_timeout'] ?> 秒（约 <?= round($link['access_timeout']/60, 1) ?> 分钟）</td></tr>
+        <tr><td>超时设置</td><td><?php $ts=(int)$link['access_timeout']; echo $ts>=3600 ? round($ts/3600,1).' 小时（'.$ts.' 秒）' : round($ts/60).' 分钟（'.$ts.' 秒）'; ?></td></tr>
         <tr><td>绝对过期</td><td>创建后 <?= $link['absolute_expiry_hours'] ?> 小时自动失效</td></tr>
         <tr><td>提交即失效</td><td><?= !empty($link['expire_on_submit']) ? '✅ 是' : '❌ 否' ?></td></tr>
     </table>
