@@ -12,8 +12,8 @@
 ### 链接管理
 | 功能 | 说明 |
 |---|---|
-| ⏱ 定时销毁 | 首次打开后 N 分钟自动失效（默认 10 分钟） |
-| 🕐 自动过期 | 创建后 N 小时未访问自动失效（默认 24 小时） |
+| ⏱ 定时销毁 | 首次打开后 N 小时自动失效（默认 24 小时） |
+| 🕐 自动过期 | 创建后 N 小时未访问自动失效（默认 7 天） |
 | 🔢 批量生成 | 一次创建 1~500 个独立链接 |
 | 👁 访问限制 | 可设最大访问次数，超限自动失效 |
 | ✅ 提交即失效 | 可选开关：用户提交表单后立刻过期 |
@@ -51,22 +51,22 @@
 ### 方式一：直接拉取镜像（推荐）
 
 ```bash
-# 先创建一个 named volume 持久化数据（只需执行一次）
-docker volume create url-destroyer-data
-
 docker run -d \
   --name url-destroyer \
   -p 8087:80 \
-  -v url-destroyer-data:/var/www/data \
-  -e ADMIN_PASSWORD=[redacted] \
+  -v /opt/url-destroyer/data:/var/www/data \
+  -e ADMIN_PASSWORD=my-secure-password \
+  -e DEFAULT_ACCESS_TIMEOUT=24 \
+  -e DEFAULT_ABSOLUTE_EXPIRY_HOURS=168 \
   mitchll1214/url-destroyer:latest
 ```
 
-> 💡 使用 named volume 后，即使删除容器、更换目录、更新镜像，历史数据都不会丢失。更新镜像时只需：
+> 💡 数据库文件位于宿主机的 `/opt/url-destroyer/data/app.db`（绝对路径，永不丢失）。
+> 更新镜像时数据不会受影响：
 > ```bash
 > docker pull mitchll1214/url-destroyer:latest
 > docker rm -f url-destroyer
-> # 重新运行上面的 docker run 命令（volume 数据会自动保留）
+> # 重新运行上面的 docker run 命令（数据库文件在宿主机上，不会丢失）
 > ```
 
 ### 方式二：源码构建
@@ -75,8 +75,8 @@ docker run -d \
 git clone https://github.com/Mitchll1214/url-destroyer.git
 cd url-destroyer
 
-# 修改默认密码
-# 编辑 www/config.php → ADMIN_PASSWORD
+# 可选：复制 .env.example 为 .env，自定义数据目录路径
+# cp .env.example .env
 
 docker compose up -d --build
 ```
@@ -172,25 +172,59 @@ url-destroyer/
 3. 关闭页面，再次打开 → 自动恢复上次填写内容
 4. 后台可预览草稿数据
 
-## ⚙️ 配置
+## ⚙️ 环境变量
 
-### 自定义后台路径
+所有配置均通过环境变量设置，优先级：**后台设置页 > 环境变量 > 默认值**。
 
-`www/config.php`：
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `ADMIN_PASSWORD` | `admin123` | 管理员初始密码（首次登录后可在后台修改） |
+| `DEFAULT_ACCESS_TIMEOUT` | `24` | 首次访问后超时（**小时**），默认 24 小时 |
+| `DEFAULT_ABSOLUTE_EXPIRY_HOURS` | `168` | 创建后未打开自动过期（**小时**），默认 7 天 |
+| `BASE_URL` | 自动检测 | 站点完整 URL（反向代理/HTTPS 时设置） |
+| `ADMIN_PATH` | `admin` | 后台入口路径（修改可防扫描） |
+| `DB_PATH` | `/var/www/data/app.db` | 数据库文件路径（一般无需修改） |
 
-```php
-define('ADMIN_PATH', 'my-secret-panel');
+### docker run 示例
+
+```bash
+docker run -d \
+  --name url-destroyer \
+  -p 8087:80 \
+  -v /opt/url-destroyer/data:/var/www/data \
+  -e ADMIN_PASSWORD=my-secure-password \
+  -e DEFAULT_ACCESS_TIMEOUT=48 \
+  -e DEFAULT_ABSOLUTE_EXPIRY_HOURS=336 \
+  -e BASE_URL=https://links.example.com \
+  -e ADMIN_PATH=my-secret-panel \
+  mitchll1214/url-destroyer:latest
 ```
 
-### 反向代理 / HTTPS
+### docker-compose 示例
 
-```php
-define('BASE_URL', 'https://your-domain.com');
+```yaml
+services:
+  app:
+    image: mitchll1214/url-destroyer:latest
+    ports:
+      - "8087:80"
+    volumes:
+      - ./data:/var/www/data
+    environment:
+      - ADMIN_PASSWORD=my-secure-password
+      - DEFAULT_ACCESS_TIMEOUT=48
+      - DEFAULT_ABSOLUTE_EXPIRY_HOURS=336
+      - BASE_URL=https://links.example.com
 ```
 
-### 默认超时
+### 数据持久化
 
-后台 → 设置 → 修改默认值（每个链接创建时可单独覆盖）。
+数据库文件 `app.db` 存放在挂载的 `/var/www/data` 目录中。确保该目录映射到宿主机固定路径，即使删除容器、更新镜像，数据也不会丢失。
+
+> ⚠️ 更新镜像时**不要**使用 `docker compose down -v`，`-v` 会删除数据卷。正确流程：
+> ```bash
+> docker compose pull && docker compose up -d
+> ```
 
 ## 📊 数据库
 
