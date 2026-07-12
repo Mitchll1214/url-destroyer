@@ -8,7 +8,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(155deg, #141824 0%, #1a1f30 50%, #1e2438 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -60,8 +60,8 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+            border-color: #c9403a;
+            box-shadow: 0 0 0 3px rgba(201,64,58,0.12);
         }
         .form-group textarea {
             min-height: 100px;
@@ -70,7 +70,7 @@
         .btn-submit {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #c9403a, #a8352e);
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -87,7 +87,7 @@
         .success-message .icon { font-size: 48px; margin-bottom: 12px; }
         .success-message h3 { color: #27ae60; margin-bottom: 8px; }
         .success-message p { color: #888; font-size: 14px; }
-        .required { color: #e74c3c; }
+        .required { color: #c9403a; }
     </style>
 </head>
 <body>

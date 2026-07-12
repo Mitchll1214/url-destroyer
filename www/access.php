@@ -196,8 +196,8 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
             html{height:100%}
             body{
                 font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
-                           "Helvetica Neue",Arial,"Noto Sans SC",sans-serif;
-                background:linear-gradient(155deg,#667eea 0%,#764ba2 50%,#5a3f8a 100%) fixed;
+                           "Helvetica Neue",Arial,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+                background:linear-gradient(155deg,#141824 0%,#1a1f30 40%,#1e2438 65%,#161a28 100%) fixed;
                 min-height:100vh;min-height:100dvh;
                 display:flex;align-items:center;justify-content:center;
                 padding:24px 16px;-webkit-font-smoothing:antialiased;
@@ -206,20 +206,20 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
             }
             body::before{
                 content:'';position:fixed;
-                width:400px;height:400px;
-                background:radial-gradient(circle,rgba(255,255,255,.06),transparent 70%);
+                width:460px;height:460px;
+                background:radial-gradient(circle,rgba(201,64,58,.07),transparent 68%);
                 top:-120px;right:-80px;border-radius:50%;pointer-events:none;z-index:0;
             }
             body::after{
                 content:'';position:fixed;
-                width:300px;height:300px;
-                background:radial-gradient(circle,rgba(255,255,255,.05),transparent 70%);
+                width:340px;height:340px;
+                background:radial-gradient(circle,rgba(74,85,144,.06),transparent 68%);
                 bottom:-80px;left:-60px;border-radius:50%;pointer-events:none;z-index:0;
             }
             .fb-container{
-                background:#fff;border-radius:20px;
+                background:#fff;border-radius:18px;
                 padding:clamp(28px,5vw,44px);max-width:520px;width:100%;
-                box-shadow:0 28px 80px rgba(0,0,0,.22),0 0 0 1px rgba(255,255,255,.1);
+                box-shadow:0 28px 80px rgba(10,12,18,.3),0 0 0 1px rgba(255,255,255,.08);
                 position:relative;z-index:1;margin:auto 0;
                 animation:fbSlideIn .5s cubic-bezier(.22,.61,.36,1);
             }
@@ -228,47 +228,48 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
                 to{opacity:1;transform:translateY(0) scale(1)}
             }
             .fb-container h2{
-                text-align:center;color:#1a1a2e;margin-bottom:4px;
+                text-align:center;color:#1c1e26;margin-bottom:4px;
                 font-size:clamp(18px,4.5vw,24px);font-weight:800;letter-spacing:-.3px;
             }
-            .fb-subtitle{text-align:center;color:#999;font-size:13px;margin-bottom:28px;line-height:1.5}
+            .fb-subtitle{text-align:center;color:#9498a4;font-size:14px;margin-bottom:28px;line-height:1.5}
             .fb-field{margin-bottom:18px}
             .fb-field label{
-                display:block;font-size:13px;font-weight:600;color:#4a4a5a;
-                margin-bottom:5px;letter-spacing:.2px;
+                display:block;font-size:13px;font-weight:600;color:#4a4d58;
+                margin-bottom:6px;letter-spacing:.15px;
             }
-            .fb-field .req{color:#e74c3c}
+            .fb-field .req{color:#c9403a;font-weight:700}
             .fb-field input,.fb-field select,.fb-field textarea{
-                width:100%;padding:11px 14px;border:1.5px solid #e0e0ea;
-                border-radius:10px;font-size:14px;font-family:inherit;
-                transition:border-color .2s,box-shadow .2s;background:#fafbfd;color:#1a1a2e;
+                width:100%;padding:11px 14px;border:1.5px solid #e0e2ea;
+                border-radius:8px;font-size:14px;font-family:inherit;
+                transition:border-color .2s,box-shadow .2s;background:#fafbfd;color:#1c1e26;
             }
-            .fb-field input:hover,.fb-field select:hover,.fb-field textarea:hover{border-color:#c8c8d8}
+            .fb-field input:hover,.fb-field select:hover,.fb-field textarea:hover{border-color:#c4c8d2}
             .fb-field input:focus,.fb-field select:focus,.fb-field textarea:focus{
-                outline:none;border-color:#667eea;
-                box-shadow:0 0 0 4px rgba(102,126,234,.12);background:#fff;
+                outline:none;border-color:#c9403a;
+                box-shadow:0 0 0 4px rgba(201,64,58,.1);background:#fff;
             }
             .fb-field textarea{min-height:100px;resize:vertical;font-size:14px;line-height:1.6}
             .fb-submit{
                 width:100%;padding:14px;
-                background:linear-gradient(135deg,#667eea,#5a4fcf);
-                color:#fff;border:none;border-radius:10px;
+                background:linear-gradient(135deg,#c9403a,#a8352e);
+                color:#fff;border:none;border-radius:8px;
                 font-size:16px;font-weight:700;cursor:pointer;
                 transition:all .25s;letter-spacing:.3px;
-                box-shadow:0 4px 16px rgba(102,126,234,.3);
+                box-shadow:0 4px 16px rgba(201,64,58,.28);
                 -webkit-appearance:none;
             }
             .fb-submit:hover{
                 transform:translateY(-2px);
-                box-shadow:0 8px 24px rgba(102,126,234,.4);
+                box-shadow:0 8px 24px rgba(201,64,58,.36);
             }
             .fb-submit:active{transform:translateY(0)}
+            .fb-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
             /* ── Autosave indicator ── */
             .autosave-indicator{
                 position:fixed;bottom:20px;right:20px;
-                background:#fff;color:#27ae60;font-size:12px;font-weight:600;
+                background:#fff;color:#2d7d5f;font-size:12px;font-weight:600;
                 padding:8px 16px;border-radius:20px;
-                box-shadow:0 4px 16px rgba(0,0,0,.12);
+                box-shadow:0 4px 18px rgba(0,0,0,.14);
                 opacity:0;transform:translateY(10px);
                 transition:opacity .3s,transform .3s;
                 pointer-events:none;z-index:999;
@@ -286,10 +287,10 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
             .fb-success .icon-wrap{
                 width:80px;height:80px;margin:0 auto 20px;
                 border-radius:50%;
-                background:linear-gradient(135deg,#27ae60,#2ecc71);
+                background:linear-gradient(135deg,#2d7d5f,#3ca078);
                 display:flex;align-items:center;justify-content:center;
                 font-size:38px;
-                box-shadow:0 12px 32px rgba(39,174,96,.3);
+                box-shadow:0 12px 32px rgba(45,125,95,.28);
                 animation:iconBounce .6s cubic-bezier(.22,.61,.36,1) .15s both;
             }
             @keyframes iconBounce{
@@ -297,20 +298,20 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
                 60%{transform:scale(1.15)}
                 100%{transform:scale(1)}
             }
-            .fb-success h3{color:#1a1a2e;margin:0 0 6px;font-size:20px;font-weight:800}
-            .fb-success p{color:#999;font-size:14px;line-height:1.6;max-width:300px;margin:0 auto}
+            .fb-success h3{color:#1c1e26;margin:0 0 6px;font-size:20px;font-weight:800}
+            .fb-success p{color:#9498a4;font-size:14px;line-height:1.6;max-width:300px;margin:0 auto}
             @media(max-width:640px){
                 body{padding:16px 12px;align-items:flex-start}
-                .fb-container{border-radius:16px;padding:24px 18px;margin:0}
+                .fb-container{border-radius:14px;padding:24px 18px;margin:0}
                 .fb-container h2{font-size:20px}
-                .fb-subtitle{font-size:12px;margin-bottom:20px}
+                .fb-subtitle{font-size:13px;margin-bottom:20px}
                 .fb-field{margin-bottom:16px}
                 .fb-field label{font-size:14px}
                 .fb-field input,.fb-field select,.fb-field textarea{
-                    padding:13px 14px;font-size:16px;border-radius:10px;
+                    padding:13px 14px;font-size:16px;border-radius:8px;
                 }
                 .fb-field textarea{min-height:120px}
-                .fb-submit{padding:16px;font-size:17px;border-radius:12px}
+                .fb-submit{padding:16px;font-size:17px;border-radius:10px}
                 .fb-success{padding:20px 0}
                 .fb-success .icon-wrap{width:64px;height:64px;font-size:30px}
                 .autosave-indicator{bottom:12px;right:12px;font-size:11px;padding:6px 12px}
@@ -445,7 +446,7 @@ function showError(string $msg): void {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: linear-gradient(160deg, #0d0d2a 0%, #141438 35%, #1a1a45 65%, #0f0f28 100%);
+                background: linear-gradient(155deg, #0e1018 0%, #151828 35%, #1a1e30 65%, #11131e 100%);
                 overflow: hidden;
                 position: relative;
                 -webkit-font-smoothing: antialiased;
@@ -460,13 +461,13 @@ function showError(string $msg): void {
             }
             .bg-orb--1 {
                 width: 500px; height: 500px;
-                background: radial-gradient(circle, rgba(233,69,96,0.07) 0%, transparent 70%);
+                background: radial-gradient(circle, rgba(201,64,58,0.06) 0%, transparent 68%);
                 top: -180px; right: -120px;
                 animation: orbFloat 14s ease-in-out infinite;
             }
             .bg-orb--2 {
                 width: 380px; height: 380px;
-                background: radial-gradient(circle, rgba(102,126,234,0.06) 0%, transparent 70%);
+                background: radial-gradient(circle, rgba(74,85,144,0.05) 0%, transparent 68%);
                 bottom: -100px; left: -80px;
                 animation: orbFloat 18s ease-in-out infinite reverse;
             }
@@ -480,7 +481,7 @@ function showError(string $msg): void {
             .dot {
                 position: absolute;
                 width: 3px; height: 3px;
-                background: rgba(255,255,255,0.1);
+                background: rgba(255,255,255,0.08);
                 border-radius: 50%;
                 pointer-events: none;
                 animation: dotRise linear infinite;
@@ -504,18 +505,18 @@ function showError(string $msg): void {
             }
 
             .expired-card {
-                background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.94));
-                backdrop-filter: blur(22px);
-                -webkit-backdrop-filter: blur(22px);
-                border-radius: 28px;
-                padding: 56px 46px 46px;
+                background: linear-gradient(180deg, rgba(255,255,255,0.97), rgba(255,255,255,0.93));
+                backdrop-filter: blur(24px);
+                -webkit-backdrop-filter: blur(24px);
+                border-radius: 22px;
+                padding: 52px 42px 42px;
                 text-align: center;
-                max-width: 460px;
+                max-width: 440px;
                 width: 92vw;
                 box-shadow:
-                    0 34px 100px rgba(0,0,0,0.34),
-                    0 0 0 1px rgba(255,255,255,0.14),
-                    inset 0 1px 0 rgba(255,255,255,0.78);
+                    0 32px 100px rgba(0,0,0,0.3),
+                    0 0 0 1px rgba(255,255,255,0.1),
+                    inset 0 1px 0 rgba(255,255,255,0.7);
                 position: relative;
                 overflow: hidden;
             }
@@ -524,40 +525,40 @@ function showError(string $msg): void {
                 position: absolute;
                 inset: 0 0 auto 0;
                 height: 1px;
-                background: linear-gradient(90deg, transparent, rgba(233,69,96,0.24), transparent);
+                background: linear-gradient(90deg, transparent, rgba(201,64,58,0.2), transparent);
                 pointer-events: none;
             }
             .expired-card::after {
                 content: '';
                 position: absolute;
-                top: -80px;
-                right: -60px;
-                width: 180px;
-                height: 180px;
+                top: -70px;
+                right: -50px;
+                width: 160px;
+                height: 160px;
                 border-radius: 50%;
-                background: radial-gradient(circle, rgba(233,69,96,0.08) 0%, transparent 70%);
+                background: radial-gradient(circle, rgba(201,64,58,0.06) 0%, transparent 68%);
                 pointer-events: none;
             }
 
             /* ── Icon ring ── */
             .expired-icon {
-                width: 94px;
-                height: 94px;
-                margin: 0 auto 26px;
+                width: 90px;
+                height: 90px;
+                margin: 0 auto 24px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 44px;
+                font-size: 42px;
                 position: relative;
-                filter: drop-shadow(0 8px 18px rgba(233,69,96,0.16));
+                filter: drop-shadow(0 8px 18px rgba(201,64,58,0.14));
             }
             .expired-icon::before {
                 content: '';
                 position: absolute;
                 inset: -4px;
                 border-radius: 50%;
-                background: linear-gradient(135deg, #e94560, #d63852);
+                background: linear-gradient(135deg, #c9403a, #a8352e);
                 z-index: -1;
             }
             .expired-icon::after {
@@ -572,11 +573,11 @@ function showError(string $msg): void {
                 position: absolute;
                 inset: -12px;
                 border-radius: 50%;
-                border: 3px solid rgba(233,69,96,0.12);
+                border: 3px solid rgba(201,64,58,0.1);
                 animation: ringPulse 2.5s ease-in-out infinite;
             }
             @keyframes ringPulse {
-                0%, 100% { transform: scale(1); opacity: 0.6; }
+                0%, 100% { transform: scale(1); opacity: 0.5; }
                 50%  { transform: scale(1.12); opacity: 1; }
             }
 
@@ -584,45 +585,45 @@ function showError(string $msg): void {
             .expired-card h1 {
                 font-size: 24px;
                 font-weight: 800;
-                color: #1a1a2e;
+                color: #1c1e26;
                 margin-bottom: 6px;
                 letter-spacing: -0.4px;
             }
             .expired-card .sub {
                 font-size: 14px;
-                color: #8f8f9e;
+                color: #9498a4;
                 margin-bottom: 20px;
                 line-height: 1.7;
-                max-width: 290px;
+                max-width: 280px;
                 margin-left: auto;
                 margin-right: auto;
             }
             .expired-card .divider {
-                width: 50px;
+                width: 48px;
                 height: 3px;
-                background: linear-gradient(90deg, #e94560, transparent);
+                background: linear-gradient(90deg, #c9403a, transparent);
                 margin: 0 auto 22px;
                 border-radius: 2px;
             }
             .expired-card .reason {
                 font-size: 14px;
-                color: #6f6f7e;
+                color: #7a7d88;
                 line-height: 1.75;
                 padding: 16px 20px;
-                background: linear-gradient(180deg, #fcfcfd, #f7f7fa);
-                border-radius: 16px;
-                border: 1px solid #f0f0f4;
-                box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+                background: linear-gradient(180deg, #fafbfd, #f6f7fa);
+                border-radius: 14px;
+                border: 1px solid #eff0f4;
             }
 
             /* ── Footer text ── */
             .expired-footer {
                 margin-top: 28px;
                 font-size: 12px;
-                color: rgba(255,255,255,0.35);
+                color: rgba(255,255,255,0.3);
                 text-align: center;
                 position: relative;
                 z-index: 1;
+                letter-spacing: 0.5px;
             }
         </style>
     </head>

@@ -178,7 +178,7 @@ adminHeader('链接列表', 'links');
                 <?php else: ?>
                     <form method="post" onsubmit="return confirm('确定将此链接置为已过期？')">
                         <input type="hidden" name="expire_id" value="<?= $row['id'] ?>">
-                        <button type="submit" class="btn btn-sm btn-outline" style="color:#e94560;border-color:#e94560;">⏹ 过期</button>
+                        <button type="submit" class="btn btn-sm btn-outline" style="color:#c9403a;border-color:#c9403a;">⏹ 过期</button>
                     </form>
                 <?php endif; ?>
                 <form method="post" onsubmit="return confirm('确定删除此链接及所有访问记录？此操作不可撤销。')">

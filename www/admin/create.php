@@ -127,7 +127,7 @@ adminHeader('创建链接', 'create');
         <div class="form-row">
             <div class="form-group">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;">
-                    <input type="checkbox" name="expire_on_submit" value="1" style="width:18px;height:18px;cursor:pointer;accent-color:#e94560;">
+                    <input type="checkbox" name="expire_on_submit" value="1" style="width:18px;height:18px;cursor:pointer;accent-color:#c9403a;">
                     <span>提交后立刻失效</span>
                 </label>
                 <span class="text-muted">勾选后，用户提交表单即马上过期，忽略超时和访问次数限制</span>
@@ -184,12 +184,12 @@ adminHeader('创建链接', 'create');
                 <div>
                     <div class="card" style="padding:16px;position:sticky;top:16px;">
                         <div class="card-header" style="margin-bottom:8px;">👁 实时预览</div>
-                        <div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:8px;padding:16px;">
+                        <div style="background:linear-gradient(135deg,#4a5590,#3d4580);border-radius:8px;padding:16px;">
                             <div style="background:#fff;border-radius:12px;padding:24px;max-width:100%;" id="previewBox">
                                 <h2 style="text-align:center;color:#333;margin-bottom:4px;font-size:18px;" id="prevTitle">信息收集表</h2>
                                 <p style="text-align:center;color:#888;font-size:12px;margin-bottom:16px;" id="prevSubtitle">请填写以下信息，提交后链接将自动失效</p>
                                 <div id="prevFields"></div>
-                                <button style="width:100%;padding:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;" id="prevSubmit">📤 提交</button>
+                                <button style="width:100%;padding:10px;background:linear-gradient(135deg,#4a5590,#3d4580);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;" id="prevSubmit">📤 提交</button>
                             </div>
                         </div>
                     </div>
@@ -291,7 +291,7 @@ function syncFields() {
 
     const prevFields = document.getElementById('prevFields');
     prevFields.innerHTML = cfg.fields.map(f => {
-        let html = '<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#444;">' + f.label + (f.required ? ' <span style="color:#e74c3c;">*</span>' : '') + '</label>';
+        let html = '<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#444;">' + f.label + (f.required ? ' <span style="color:#c9403a;">*</span>' : '') + '</label>';
         const dv = (f.default_value || '').replace(/"/g, '&quot;');
         if (f.type === 'textarea') {
             html += '<textarea style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;min-height:50px;resize:vertical;" placeholder="' + f.placeholder + '">' + dv + '</textarea>';
@@ -383,13 +383,13 @@ function generateFormHTML() {
 
     var html = '<!DOCTYPE html>\n<html lang="zh">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>' + cfg.title + '</title>\n';
     html += '<style>\n*{box-sizing:border-box;margin:0;padding:0}\n';
-    html += 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(155deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}\n';
+    html += 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(155deg,#141824,#1a1f30,#1e2438,#161a28);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}\n';
     html += '.card{background:#fff;border-radius:16px;padding:32px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.15)}\n';
     html += '.card h2{text-align:center;color:#333;margin-bottom:4px}\n';
     html += '.subtitle{text-align:center;color:#888;font-size:13px;margin-bottom:24px}\n';
     html += 'label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:4px;margin-top:14px}\n';
     html += 'input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px}\n';
-    html += 'button{width:100%;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-top:20px}\n';
+    html += 'button{width:100%;padding:12px;background:linear-gradient(135deg,#c9403a,#a8352e);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-top:20px}\n';
     html += '</style>\n</head>\n<body>\n<div class="card">\n';
     html += '  <h2>' + cfg.title + '</h2>\n';
     if (cfg.subtitle) html += '  <p class="subtitle">' + cfg.subtitle + '</p>\n';

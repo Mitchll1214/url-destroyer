@@ -167,7 +167,7 @@ $draftCount = 0;
 <details class="card main-shell">
     <summary class="card-header">👁 表单预览 <span style="font-size:11px;color:#888;">(点击展开)</span></summary>
     <div style="display:flex;justify-content:center;">
-        <div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;padding:20px;max-width:420px;width:100%;">
+        <div style="background:linear-gradient(135deg,#4a5590,#3d4580);border-radius:12px;padding:20px;max-width:420px;width:100%;">
             <div style="background:#fff;border-radius:10px;padding:20px;">
                 <h3 style="text-align:center;color:#333;margin-bottom:4px;font-size:16px;"><?= htmlspecialchars($cfg['title'] ?? '') ?></h3>
                 <?php if (!empty($cfg['subtitle'])): ?>
@@ -182,7 +182,7 @@ $draftCount = 0;
                     $opts  = $f['options'] ?? [];
                 ?>
                 <div style="margin-bottom:10px;">
-                    <label style="font-size:11px;font-weight:600;color:#444;"><?= $label ?><?= $req ? ' <span style="color:#e74c3c;">*</span>' : '' ?></label>
+                    <label style="font-size:11px;font-weight:600;color:#444;"><?= $label ?><?= $req ? ' <span style="color:#c9403a;">*</span>' : '' ?></label>
                     <?php if ($type === 'textarea'): ?>
                         <div style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:11px;min-height:40px;background:#fafafa;color:#999;"><?= $dv ?: $ph ?></div>
                     <?php elseif ($type === 'select'): ?>
@@ -192,7 +192,7 @@ $draftCount = 0;
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
-                <div style="width:100%;padding:8px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;text-align:center;">📤 <?= htmlspecialchars($cfg['submit_text'] ?? '提交') ?></div>
+                <div style="width:100%;padding:8px;background:linear-gradient(135deg,#4a5590,#3d4580);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;text-align:center;">📤 <?= htmlspecialchars($cfg['submit_text'] ?? '提交') ?></div>
             </div>
         </div>
     </div>
@@ -225,7 +225,7 @@ $draftCount = 0;
             <td>
                 <?php if (!empty($log['form_data'])): ?>
                 <details>
-                    <summary style="cursor:pointer;color:#e94560;">查看数据</summary>
+                    <summary style="cursor:pointer;color:#c9403a;">查看数据</summary>
                     <pre style="font-size:11px;background:#f5f5f5;padding:8px;border-radius:4px;max-width:300px;overflow:auto;"><?= htmlspecialchars(json_encode(json_decode($log['form_data']), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) ?></pre>
                 </details>
                 <?php else: ?>
