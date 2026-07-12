@@ -51,12 +51,23 @@
 ### 方式一：直接拉取镜像（推荐）
 
 ```bash
+# 先创建一个 named volume 持久化数据（只需执行一次）
+docker volume create url-destroyer-data
+
 docker run -d \
   --name url-destroyer \
   -p 8087:80 \
-  -v $(pwd)/data:/var/www/data \
+  -v url-destroyer-data:/var/www/data \
+  -e ADMIN_PASSWORD=[redacted] \
   mitchll1214/url-destroyer:latest
 ```
+
+> 💡 使用 named volume 后，即使删除容器、更换目录、更新镜像，历史数据都不会丢失。更新镜像时只需：
+> ```bash
+> docker pull mitchll1214/url-destroyer:latest
+> docker rm -f url-destroyer
+> # 重新运行上面的 docker run 命令（volume 数据会自动保留）
+> ```
 
 ### 方式二：源码构建
 

@@ -16,14 +16,20 @@ services:
     ports:
       - "8087:80"
     volumes:
-      - ./data:/var/www/data
+      # 使用 named volume 持久化数据 — 重建容器、切换目录都不会丢失
+      - url-destroyer-data:/var/www/data
       - ./templates:/var/www/templates
+      # 如需直接访问数据库文件，改用 bind mount：
+      # - ./data:/var/www/data
     restart: unless-stopped
     # ── 环境变量配置（可选，不设置则使用默认值）──
     environment:
-      - ADMIN_PASSWORD=admin123           # 管理员初始密码
+      - ADMIN_PASSWORD=[redacted]           # 管理员初始密码
       - DEFAULT_ACCESS_TIMEOUT=24         # 默认访问超时（小时）
       - DEFAULT_ABSOLUTE_EXPIRY_HOURS=168 # 默认未打开过期（小时）= 7 天
       # - BASE_URL=https://your-domain.com # 站点 URL（反向代理时设置）
       # - ADMIN_PATH=admin                 # 后台路径（防扫描可改）
       # - DB_PATH=/var/www/data/app.db     # 数据库文件路径
+
+volumes:
+  url-destroyer-data:
