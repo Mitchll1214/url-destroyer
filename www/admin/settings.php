@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $oldPass = $_POST['old_password'] ?? '';
         $newPass = $_POST['new_password'] ?? '';
         $confirm = $_POST['confirm_password'] ?? '';
-        $currentPw = $db->query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn() ?: ADMIN_PASSWORD;
+        $currentPw = DB::query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn() ?: ADMIN_PASSWORD;
         if ($oldPass !== $currentPw) {
             $message = '❌ 当前密码错误';
         } elseif (strlen($newPass) < 4) {
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($newPass !== $confirm) {
             $message = '❌ 两次输入的新密码不一致';
         } else {
-            $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', :v)")->execute([':v' => $newPass]);
+            DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', :v)"))->execute([':v' => $newPass]);
             $message = '✅ 密码已修改，下次登录生效';
         }
     }
@@ -32,14 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['default_access_timeout'])) {
         $timeoutHours = max(0.1, (float)$_POST['default_access_timeout']);
         $timeoutSeconds = (int)($timeoutHours * 3600);
-        $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_access_timeout', :v)")
+        DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_access_timeout', :v)"))
            ->execute([':v' => $timeoutSeconds]);
     }
 
     // Update default absolute expiry
     if (isset($_POST['default_absolute_expiry_hours'])) {
         $expiry = max(1, (int)$_POST['default_absolute_expiry_hours']);
-        $db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_absolute_expiry_hours', :v)")
+        DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_absolute_expiry_hours', :v)"))
            ->execute([':v' => $expiry]);
     }
 
@@ -49,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Load current values (优先级：数据库 > 环境变量 > config.php 常量)
-$currentTimeout = $db->query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: DEFAULT_ACCESS_TIMEOUT;
-$currentExpiry  = $db->query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: DEFAULT_ABSOLUTE_EXPIRY_HOURS;
+$currentTimeout = DB::query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: DEFAULT_ACCESS_TIMEOUT;
+$currentExpiry  = DB::query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: DEFAULT_ABSOLUTE_EXPIRY_HOURS;
 // 前端显示用：超时秒数转为小时
 $currentTimeoutHours = round($currentTimeout / 3600, 1);
 
@@ -103,8 +103,8 @@ adminHeader('系统设置', 'settings');
     <div class="card-header">📊 数据库信息</div>
     <table class="kv-table">
         <tr><td>数据库路径</td><td><code><?= htmlspecialchars(DB_PATH) ?></code></td></tr>
-        <tr><td>链接总数</td><td><?= $db->query("SELECT COUNT(*) FROM links")->fetchColumn() ?></td></tr>
-        <tr><td>日志总数</td><td><?= $db->query("SELECT COUNT(*) FROM access_logs")->fetchColumn() ?></td></tr>
+        <tr><td>链接总数</td><td><?= DB::query("SELECT COUNT(*) FROM links")->fetchColumn() ?></td></tr>
+        <tr><td>日志总数</td><td><?= DB::query("SELECT COUNT(*) FROM access_logs")->fetchColumn() ?></td></tr>
     </table>
 </div>
 

@@ -8,8 +8,6 @@
 
 require_once __DIR__ . '/db.php';
 
-$db = getDB();
-
 // ── Get token ──
 $token = trim($_GET['token'] ?? '');
 if (empty($token)) {
@@ -17,7 +15,7 @@ if (empty($token)) {
 }
 
 // ── Look up link ──
-$stmt = $db->prepare("SELECT * FROM links WHERE token = :token LIMIT 1");
+$stmt = DB::prepare("SELECT * FROM links WHERE token = :token LIMIT 1");
 $stmt->execute([':token' => $token]);
 $link = $stmt->fetch();
 
@@ -37,7 +35,7 @@ $createdAt = new DateTime($link['created_at']);
 $absExpiryHours = (int)$link['absolute_expiry_hours'];
 $absDeadline = (clone $createdAt)->modify("+{$absExpiryHours} hours");
 if ($now > $absDeadline) {
-    $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id'=>$link['id']]);
+    DB::prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id'=>$link['id']]);
     showError('此链接已超过最大有效时间，已自动失效。');
 }
 
@@ -47,11 +45,11 @@ $isPost = ($_SERVER['REQUEST_METHOD'] === 'POST');
 if ($isPost && empty($_POST['__final_submit'])) {
     $postCopy = $_POST;
     unset($postCopy['token']);
-    $db->prepare("INSERT OR REPLACE INTO form_drafts (token, form_data, updated_at) VALUES (:t, :d, datetime('now', 'localtime'))")
+    DB::prepare("INSERT OR REPLACE INTO form_drafts (token, form_data, updated_at) VALUES (:t, :d, datetime('now', 'localtime'))"))
        ->execute([':t' => $token, ':d' => json_encode($postCopy, JSON_UNESCAPED_UNICODE)]);
     // Upgrade from active to draft on first autosave
     if ($link['status'] === 'active') {
-        $db->prepare("UPDATE links SET status='draft' WHERE id=:id")->execute([':id' => $link['id']]);
+        DB::prepare("UPDATE links SET status='draft' WHERE id=:id")->execute([':id' => $link['id']]);
     }
     header('Content-Type: application/json; charset=UTF-8');
     echo json_encode(['ok' => true, 'saved_at' => date('Y-m-d H:i:s')]);
@@ -59,7 +57,7 @@ if ($isPost && empty($_POST['__final_submit'])) {
 }
 
 // ── Load draft (for pre-populating form) ──
-$draft = $db->prepare("SELECT form_data FROM form_drafts WHERE token = :t");
+$draft = DB::prepare("SELECT form_data FROM form_drafts WHERE token = :t");
 $draft->execute([':t' => $token]);
 $draftData = json_decode($draft->fetchColumn() ?: '{}', true) ?: [];
 
@@ -67,7 +65,7 @@ $draftData = json_decode($draft->fetchColumn() ?: '{}', true) ?: [];
 if ($link['first_accessed_at'] === null && $link['status'] === 'active') {
     $timeoutSeconds = (int)$link['access_timeout'];
     $expiresAt = (clone $now)->modify("+{$timeoutSeconds} seconds")->format('Y-m-d H:i:s');
-    $db->prepare("UPDATE links SET first_accessed_at=datetime('now', 'localtime'), expires_at=:exp WHERE id=:id")
+    DB::prepare("UPDATE links SET first_accessed_at=datetime('now', 'localtime'), expires_at=:exp WHERE id=:id"))
        ->execute([':exp' => $expiresAt, ':id' => $link['id']]);
     $link['first_accessed_at'] = $now->format('Y-m-d H:i:s');
 }
@@ -76,7 +74,7 @@ if ($link['first_accessed_at'] === null && $link['status'] === 'active') {
 if ($link['first_accessed_at'] !== null && $link['expires_at'] !== null) {
     $expiresAt = new DateTime($link['expires_at']);
     if ($now > $expiresAt && $link['status'] !== 'expired') {
-        $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
+        DB::prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
         $link['status'] = 'expired';
     }
 }
@@ -84,10 +82,10 @@ if ($link['first_accessed_at'] !== null && $link['expires_at'] !== null) {
 // ── Max access check for every GET (including draft reloads) ──
 if (!$isPost) {
     if ($link['access_count'] >= $link['max_accesses']) {
-        $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
+        DB::prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
         showError('此链接已达到最大访问次数，已自动失效。');
     }
-    $db->prepare("UPDATE links SET access_count=access_count+1 WHERE id=:id")->execute([':id' => $link['id']]);
+    DB::prepare("UPDATE links SET access_count=access_count+1 WHERE id=:id")->execute([':id' => $link['id']]);
     $link['access_count']++;
 }
 
@@ -104,18 +102,18 @@ if ($isPost && !empty($_POST['__final_submit'])) {
     $postCopy = $_POST;
     unset($postCopy['token'], $postCopy['__final_submit']);
     $formData = json_encode($postCopy, JSON_UNESCAPED_UNICODE);
-    $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, referer, form_data, accessed_at) VALUES (:lid, :ip, :ua, :ref, :fd, datetime('now', 'localtime'))")
+    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, referer, form_data, accessed_at) VALUES (:lid, :ip, :ua, :ref, :fd, datetime('now', 'localtime'))"))
        ->execute([':lid' => $link['id'], ':ip' => $ip, ':ua' => $ua, ':ref' => $ref, ':fd' => $formData]);
 
     // Transition: draft → submitted (or expired if expire_on_submit=1)
     if (!empty($link['expire_on_submit'])) {
-        $db->prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
+        DB::prepare("UPDATE links SET status='expired' WHERE id=:id")->execute([':id' => $link['id']]);
     } else {
-        $db->prepare("UPDATE links SET status='submitted' WHERE id=:id")->execute([':id' => $link['id']]);
+        DB::prepare("UPDATE links SET status='submitted' WHERE id=:id")->execute([':id' => $link['id']]);
     }
 
     // Delete draft after successful submit
-    $db->prepare("DELETE FROM form_drafts WHERE token = :t")->execute([':t' => $token]);
+    DB::prepare("DELETE FROM form_drafts WHERE token = :t")->execute([':t' => $token]);
 
     $submitted = true;
 }

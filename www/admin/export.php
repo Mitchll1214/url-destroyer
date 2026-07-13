@@ -40,7 +40,7 @@ if ($dateTo !== '') {
 $whereClause = 'WHERE ' . implode(' AND ', $where);
 
 // ── Fetch matching links ──
-$stmt = $db->prepare("SELECT * FROM links $whereClause ORDER BY campaign_name, id");
+$stmt = DB::prepare("SELECT * FROM links $whereClause ORDER BY campaign_name, id");
 $stmt->execute($params);
 $links = $stmt->fetchAll();
 
@@ -84,7 +84,7 @@ if (empty($allFieldNames)) {
 // ── Fetch all access logs with form_data for these links ──
 $linkIds = array_column($links, 'id');
 $placeholders = implode(',', array_fill(0, count($linkIds), '?'));
-$logStmt = $db->prepare("
+$logStmt = DB::prepare("
     SELECT al.*, l.campaign_name, l.token 
     FROM access_logs al 
     JOIN links l ON al.link_id = l.id 

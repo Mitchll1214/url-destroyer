@@ -15,7 +15,7 @@ if ($linkId <= 0) {
 }
 
 // Fetch link info
-$link = $db->prepare("SELECT * FROM links WHERE id = :id");
+$link = DB::prepare("SELECT * FROM links WHERE id = :id");
 $link->execute([':id' => $linkId]);
 $link = $link->fetch();
 
@@ -27,7 +27,7 @@ if (!$link) {
 
 // Handle clear logs
 if (isset($_POST['clear_logs'])) {
-    $db->prepare("DELETE FROM access_logs WHERE link_id = :id")->execute([':id' => $linkId]);
+    DB::prepare("DELETE FROM access_logs WHERE link_id = :id")->execute([':id' => $linkId]);
     header("Location: stats.php?id=$linkId&cleared=1");
     exit;
 }
@@ -37,13 +37,13 @@ $cleared = isset($_GET['cleared']);
 // Pagination for logs
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 30;
-$totalLogs = $db->prepare("SELECT COUNT(*) FROM access_logs WHERE link_id = :id");
+$totalLogs = DB::prepare("SELECT COUNT(*) FROM access_logs WHERE link_id = :id");
 $totalLogs->execute([':id' => $linkId]);
 $totalLogs = $totalLogs->fetchColumn();
 $totalPages = max(1, ceil($totalLogs / $perPage));
 $offset = ($page - 1) * $perPage;
 
-$logs = $db->prepare("SELECT * FROM access_logs WHERE link_id = :id ORDER BY id DESC LIMIT :limit OFFSET :offset");
+$logs = DB::prepare("SELECT * FROM access_logs WHERE link_id = :id ORDER BY id DESC LIMIT :limit OFFSET :offset");
 $logs->bindValue(':id', $linkId, PDO::PARAM_INT);
 $logs->bindValue(':limit', $perPage, PDO::PARAM_INT);
 $logs->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -114,7 +114,7 @@ if (!empty(trim($tc))) {
 <!-- Draft data preview (only for draft status) -->
 <?php if ($link['status'] === 'draft'): ?>
 <?php
-$draftData = $db->prepare("SELECT form_data, updated_at FROM form_drafts WHERE token = :t");
+$draftData = DB::prepare("SELECT form_data, updated_at FROM form_drafts WHERE token = :t");
 $draftData->execute([':t' => $link['token']]);
 $draft = $draftData->fetch();
 if ($draft && !empty($draft['form_data'])):

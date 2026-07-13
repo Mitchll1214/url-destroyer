@@ -29,3 +29,11 @@ services:
       # - BASE_URL=https://your-domain.com # 站点 URL（反向代理时设置）
       # - ADMIN_PATH=admin                 # 后台路径（防扫描可改）
       - DB_PATH=/var/www/data/app.db     # 数据库文件路径（entrypoint 和 PHP 均从此读取，保持一致）
+      # - DB_TABLE_PREFIX=ud_            # 表名前缀（默认 ud_，设为空则不使用前缀）
+      # ── MySQL 配置（取消注释即可切换数据库引擎） ──
+      # - DB_DRIVER=mysql                 # 切换为 MySQL（默认 sqlite）
+      # - DB_HOST=mysql-container         # MySQL 主机名/服务名
+      # - DB_PORT=3306                    # MySQL 端口
+      # - DB_DATABASE=url_destroyer       # 数据库名
+      # - DB_USERNAME=root                # 用户名
+      # - DB_PASSWORD=secret              # 密码

@@ -36,8 +36,23 @@ define('ADMIN_PATH', env('ADMIN_PATH', 'admin'));
 define('DEFAULT_ACCESS_TIMEOUT', (int)((float)env('DEFAULT_ACCESS_TIMEOUT', '24') * 3600));  // hours → seconds
 define('DEFAULT_ABSOLUTE_EXPIRY_HOURS', (int)env('DEFAULT_ABSOLUTE_EXPIRY_HOURS', 168)); // 7 days
 
-// Database path — 支持环境变量覆盖（例如将数据库放在持久卷中）
+// ── Database driver: sqlite (default) or mysql ──
+// sqlite:  使用 DB_PATH 指向 .db 文件
+// mysql:   使用 DB_HOST / DB_PORT / DB_DATABASE / DB_USERNAME / DB_PASSWORD
+define('DB_DRIVER', env('DB_DRIVER', 'sqlite'));
+
+// SQLite database path
 define('DB_PATH', env('DB_PATH', __DIR__ . '/../data/app.db'));
+
+// MySQL connection
+define('DB_HOST', env('DB_HOST', '127.0.0.1'));
+define('DB_PORT', env('DB_PORT', '3306'));
+define('DB_DATABASE', env('DB_DATABASE', 'url_destroyer'));
+define('DB_USERNAME', env('DB_USERNAME', 'root'));
+define('DB_PASSWORD', env('DB_PASSWORD', ''));
+
+// Table name prefix
+define('DB_TABLE_PREFIX', env('DB_TABLE_PREFIX', 'ud_'));
 
 // Site base URL — 环境变量 > 自动检测
 $envBaseUrl = env('BASE_URL', '');

@@ -9,8 +9,8 @@ requireLogin();
 $db = getDB();
 
 // Load defaults from settings (优先级：数据库 > 环境变量 > config.php 常量)
-$defaultTimeout = (int)($db->query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: DEFAULT_ACCESS_TIMEOUT);
-$defaultExpiry  = (int)($db->query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: DEFAULT_ABSOLUTE_EXPIRY_HOURS);
+$defaultTimeout = (int)(DB::query("SELECT value FROM settings WHERE key='default_access_timeout'")->fetchColumn() ?: DEFAULT_ACCESS_TIMEOUT);
+$defaultExpiry  = (int)(DB::query("SELECT value FROM settings WHERE key='default_absolute_expiry_hours'")->fetchColumn() ?: DEFAULT_ABSOLUTE_EXPIRY_HOURS);
 // 前端显示用：超时秒数转为小时
 $defaultTimeoutHours = round($defaultTimeout / 3600, 1);
 
@@ -21,7 +21,7 @@ $error = '';
 $copyConfig = null;
 $copyId = (int)($_GET['copy_from'] ?? 0);
 if ($copyId > 0) {
-    $src = $db->prepare("SELECT target_content, campaign_name FROM links WHERE id = :id");
+    $src = DB::prepare("SELECT target_content, campaign_name FROM links WHERE id = :id");
     $src->execute([':id' => $copyId]);
     $srcRow = $src->fetch();
     if ($srcRow && !empty(trim($srcRow['target_content']))) {
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($absExpiry < 1) {
         $error = '绝对过期时间不能少于 1 小时';
     } else {
-        $stmt = $db->prepare("
+        $stmt = DB::prepare("
             INSERT INTO links (token, campaign_name, target_content, access_timeout, absolute_expiry_hours, max_accesses, expire_on_submit, status, created_at)
             VALUES (:token, :campaign, :content, :timeout, :abs_expiry, :max_accesses, :expire_on_submit, 'active', datetime('now', 'localtime'))
         ");
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':max_accesses'=> $maxAccesses,
                 ':expire_on_submit' => $expireOnSubmit,
             ]);
-            $createdLinks[] = ['id' => $db->lastInsertId(), 'token' => $token];
+            $createdLinks[] = ['id' => getDB()->lastInsertId(), 'token' => $token];
         }
     }
 }

@@ -14,7 +14,7 @@ function getClientIP(): string {
 
 function getAdminPassword(): string {
     $db = getDB();
-    $stored = $db->query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn();
+    $stored = DB::query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn();
     return $stored ?: ADMIN_PASSWORD;
 }
 
@@ -30,16 +30,16 @@ function requireLogin(): void {
     $lockoutSeconds = 60;
 
     // Clean up old attempts (> window)
-    $db->exec("DELETE FROM login_attempts WHERE attempted_at < datetime('now', 'localtime', '-{$windowMinutes} minutes')");
+    DB::exec("DELETE FROM login_attempts WHERE attempted_at < datetime('now', 'localtime', '-{$windowMinutes} minutes')");
 
     // Count recent failed attempts
-    $countStmt = $db->prepare("SELECT COUNT(*) FROM login_attempts WHERE ip = :ip");
+    $countStmt = DB::prepare("SELECT COUNT(*) FROM login_attempts WHERE ip = :ip");
     $countStmt->execute([':ip' => $ip]);
     $failedCount = (int)$countStmt->fetchColumn();
 
     if ($failedCount >= $maxAttempts) {
         // Get the earliest attempt in the window to calculate cooldown
-        $earliest = $db->prepare("SELECT attempted_at FROM login_attempts WHERE ip = :ip ORDER BY attempted_at DESC LIMIT 1");
+        $earliest = DB::prepare("SELECT attempted_at FROM login_attempts WHERE ip = :ip ORDER BY attempted_at DESC LIMIT 1");
         $earliest->execute([':ip' => $ip]);
         $lastAttemptTime = $earliest->fetchColumn();
         $lastAttempt = new DateTime($lastAttemptTime);
@@ -57,12 +57,12 @@ function requireLogin(): void {
         if ($failedCount < $maxAttempts) {
             if (hash_equals(getAdminPassword(), $_POST['password'])) {
                 // Success: clear all attempts for this IP
-                $db->prepare("DELETE FROM login_attempts WHERE ip = :ip")->execute([':ip' => $ip]);
+                DB::prepare("DELETE FROM login_attempts WHERE ip = :ip")->execute([':ip' => $ip]);
                 $_SESSION['admin_logged_in'] = true;
                 return;
             }
             // Record failed attempt
-            $db->prepare("INSERT INTO login_attempts (ip) VALUES (:ip)")->execute([':ip' => $ip]);
+            DB::prepare("INSERT INTO login_attempts (ip) VALUES (:ip)")->execute([':ip' => $ip]);
             $GLOBALS['login_error'] = '密码错误';
         }
     }

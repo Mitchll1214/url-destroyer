@@ -17,9 +17,9 @@ RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Install SQLite3 PHP extension (pdo_sqlite 通常已内置，此处确保)
-RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev \
-    && docker-php-ext-install pdo_sqlite \
+# Install SQLite3 + MySQL PHP extensions
+RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev default-mysql-client libmariadb-dev \
+    && docker-php-ext-install pdo_sqlite pdo_mysql \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy application

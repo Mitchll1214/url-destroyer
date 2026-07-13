@@ -9,11 +9,11 @@ requireLogin();
 $db = getDB();
 
 // Stats
-$totalLinks   = $db->query("SELECT COUNT(*) FROM links")->fetchColumn();
-$activeLinks  = $db->query("SELECT COUNT(*) FROM links WHERE status='active'")->fetchColumn();
-$expiredLinks = $db->query("SELECT COUNT(*) FROM links WHERE status='expired'")->fetchColumn();
-$openedLinks  = $db->query("SELECT COUNT(*) FROM links WHERE access_count > 0")->fetchColumn();
-$totalAccess  = $db->query("SELECT COUNT(*) FROM access_logs")->fetchColumn();
+$totalLinks   = DB::query("SELECT COUNT(*) FROM links")->fetchColumn();
+$activeLinks  = DB::query("SELECT COUNT(*) FROM links WHERE status='active'")->fetchColumn();
+$expiredLinks = DB::query("SELECT COUNT(*) FROM links WHERE status='expired'")->fetchColumn();
+$openedLinks  = DB::query("SELECT COUNT(*) FROM links WHERE access_count > 0")->fetchColumn();
+$totalAccess  = DB::query("SELECT COUNT(*) FROM access_logs")->fetchColumn();
 
 adminHeader('管理仪表盘', 'dashboard');
 ?>
@@ -53,7 +53,7 @@ adminHeader('管理仪表盘', 'dashboard');
         </tr></thead>
         <tbody>
         <?php
-        $recent = $db->query("SELECT * FROM links ORDER BY id DESC LIMIT 10");
+        $recent = DB::query("SELECT * FROM links ORDER BY id DESC LIMIT 10");
         foreach ($recent as $row):
             if ($row['status'] === 'active') {
                 $displayState = empty($row['first_accessed_at']) ? 'unopened' : 'opened';

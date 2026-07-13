@@ -10,7 +10,7 @@ $db = getDB();
 
 // Handle deletion
 if (isset($_POST['delete_id'])) {
-    $delStmt = $db->prepare("DELETE FROM links WHERE id = :id");
+    $delStmt = DB::prepare("DELETE FROM links WHERE id = :id");
     $delStmt->execute([':id' => (int)$_POST['delete_id']]);
     header('Location: links.php?deleted=1');
     exit;
@@ -19,13 +19,13 @@ if (isset($_POST['delete_id'])) {
 // Handle reactivate (expired → active) — only if not absolutely expired
 if (isset($_POST['reactivate_id'])) {
     $rid = (int)$_POST['reactivate_id'];
-    $link = $db->prepare("SELECT created_at, absolute_expiry_hours FROM links WHERE id=:id");
+    $link = DB::prepare("SELECT created_at, absolute_expiry_hours FROM links WHERE id=:id");
     $link->execute([':id'=>$rid]);
     $link = $link->fetch();
     if ($link && time() <= strtotime($link['created_at']) + (int)$link['absolute_expiry_hours'] * 3600) {
-        $db->prepare("UPDATE links SET status='active', first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=2, expire_on_submit=0 WHERE id=:id")
+        DB::prepare("UPDATE links SET status='active', first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=2, expire_on_submit=0 WHERE id=:id")
            ->execute([':id'=>$rid]);
-        $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'reactivate', '链接被重新打开', datetime('now','localtime'))")
+        DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'reactivate', '链接被重新打开', datetime('now','localtime'))"))
            ->execute([':id'=>$rid]);
     }
     header('Location: links.php?edited=1');
@@ -35,9 +35,9 @@ if (isset($_POST['reactivate_id'])) {
 // Handle force expire (non-expired → expired)
 if (isset($_POST['expire_id'])) {
     $eid = (int)$_POST['expire_id'];
-    $db->prepare("UPDATE links SET status='expired', expires_at=datetime('now','localtime') WHERE id=:id")
+    DB::prepare("UPDATE links SET status='expired', expires_at=datetime('now','localtime') WHERE id=:id"))
        ->execute([':id'=>$eid]);
-    $db->prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'force_expire', '管理员置为已过期', datetime('now','localtime'))")
+    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'force_expire', '管理员置为已过期', datetime('now','localtime'))"))
        ->execute([':id'=>$eid]);
     header('Location: links.php?edited=1');
     exit;
@@ -81,13 +81,13 @@ if ($dateTo !== '') {
 }
 $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-$countStmt = $db->prepare("SELECT COUNT(*) FROM links $whereClause");
+$countStmt = DB::prepare("SELECT COUNT(*) FROM links $whereClause");
 $countStmt->execute($params);
 $total = $countStmt->fetchColumn();
 $totalPages = max(1, ceil($total / $perPage));
 $offset = ($page - 1) * $perPage;
 
-$links = $db->prepare("SELECT * FROM links $whereClause ORDER BY id DESC LIMIT :limit OFFSET :offset");
+$links = DB::prepare("SELECT * FROM links $whereClause ORDER BY id DESC LIMIT :limit OFFSET :offset");
 foreach ($params as $k => $v) $links->bindValue($k, $v);
 $links->bindValue(':limit', $perPage, PDO::PARAM_INT);
 $links->bindValue(':offset', $offset, PDO::PARAM_INT);
