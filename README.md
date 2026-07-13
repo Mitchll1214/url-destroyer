@@ -1,6 +1,6 @@
 ﻿# 🔗 url-destroyer
 
-基于 PHP + SQLite 的**一次性链接管理系统**。可视化表单构建、草稿自动保存、定时销毁、访问追踪、CSV 导出，Docker 一键部署。
+基于 PHP + SQLite / MySQL 的**一次性链接管理系统**。可视化表单构建、草稿自动保存、定时销毁、访问追踪、CSV 导出，Docker 一键部署。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/php-8.2-777bb4.svg)](https://php.net)
@@ -55,7 +55,7 @@ docker run -d \
   --name url-destroyer \
   -p 8087:80 \
   -v /opt/url-destroyer/data:/var/www/data \
-  -e ADMIN_PASSWORD=my-secure-password \
+  -e ADMIN_PASSWORD=my-secret-password \
   -e DEFAULT_ACCESS_TIMEOUT=24 \
   -e DEFAULT_ABSOLUTE_EXPIRY_HOURS=168 \
   mitchll1214/url-destroyer:latest
@@ -94,13 +94,13 @@ docker compose up -d --build
 url-destroyer/
 ├── Dockerfile                  # PHP 8.2 + Apache（DaoCloud 镜像）
 ├── docker-compose.yml          # 端口 8087，data 卷挂载
-├── docker-entrypoint.sh        # 容器启动权限修复
+├── docker-entrypoint.sh        # 容器启动权限修复 + 数据库检测
 ├── data/                       # SQLite 数据库（挂载卷）
 ├── .github/workflows/          # CI/CD 自动构建多架构镜像
 └── www/
     ├── .htaccess               # URL 重写 + data 目录保护
-    ├── config.php              # 密码、时区、BASE_URL
-    ├── db.php                  # SQLite 初始化 + 自动迁移
+    ├── config.php              # 全局配置（密码/时区/数据库/URL）
+    ├── db.php                  # SQLite / MySQL 双驱动层 + 表前缀
     ├── index.php               # → 重定向到后台
     ├── access.php              # 🔑 公开访问入口（核心引擎）
     ├── assets/style.css        # 响应式样式（CSS 变量主题）
@@ -120,7 +120,7 @@ url-destroyer/
 |---|---|
 | 语言 | PHP 8.2 |
 | Web 服务器 | Apache 2.4 + mod_rewrite |
-| 数据库 | SQLite 3 (WAL 模式) |
+| 数据库 | SQLite 3 (WAL 模式) / MySQL |
 | 容器 | Docker + docker-compose |
 | 前端 | 原生 HTML/CSS/JS（零依赖） |
 | 时区 | Asia/Shanghai（北京时间） |
@@ -176,31 +176,79 @@ url-destroyer/
 
 所有配置均通过环境变量设置，优先级：**后台设置页 > 环境变量 > 默认值**。
 
+### 核心配置
+
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `ADMIN_PASSWORD` | `admin123` | 管理员初始密码（首次登录后可在后台修改） |
-| `DEFAULT_ACCESS_TIMEOUT` | `24` | 首次访问后超时（**小时**），默认 24 小时 |
-| `DEFAULT_ABSOLUTE_EXPIRY_HOURS` | `168` | 创建后未打开自动过期（**小时**），默认 7 天 |
+| `DEFAULT_ACCESS_TIMEOUT` | `24` | 首次访问后超时（**小时**） |
+| `DEFAULT_ABSOLUTE_EXPIRY_HOURS` | `168` | 创建后未打开自动过期（**小时**） |
 | `BASE_URL` | 自动检测 | 站点完整 URL（反向代理/HTTPS 时设置） |
 | `ADMIN_PATH` | `admin` | 后台入口路径（修改可防扫描） |
-| `DB_PATH` | `/var/www/data/app.db` | 数据库文件路径（一般无需修改） |
 
-### docker run 示例
+### 数据库配置
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DB_DRIVER` | `sqlite` | 数据库驱动：`sqlite`（默认）或 `mysql` |
+| `DB_TABLE_PREFIX` | `ud_` | 表名前缀（设为空字符串可取消前缀） |
+
+#### SQLite 专用
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DB_PATH` | `/var/www/data/app.db` | 数据库文件路径 |
+| `DATA_DIR` | `./data` | 数据目录（docker-compose 卷挂载变量） |
+
+#### MySQL 专用（设置 `DB_DRIVER=mysql` 后生效）
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DB_HOST` | `127.0.0.1` | MySQL 服务器地址 |
+| `DB_PORT` | `3306` | MySQL 端口 |
+| `DB_DATABASE` | `url_destroyer` | 数据库名称 |
+| `DB_USERNAME` | `root` | 用户名 |
+| `DB_PASSWORD` | （空） | 密码 |
+| `DB_CHARSET` | `utf8mb4` | 连接字符集 |
+
+### 部署示例
+
+#### docker run（SQLite）
 
 ```bash
 docker run -d \
   --name url-destroyer \
   -p 8087:80 \
   -v /opt/url-destroyer/data:/var/www/data \
-  -e ADMIN_PASSWORD=my-secure-password \
+  -e ADMIN_PASSWORD=my-secret-password \
   -e DEFAULT_ACCESS_TIMEOUT=48 \
   -e DEFAULT_ABSOLUTE_EXPIRY_HOURS=336 \
   -e BASE_URL=https://links.example.com \
   -e ADMIN_PATH=my-secret-panel \
+  -e DB_TABLE_PREFIX=ud_ \
   mitchll1214/url-destroyer:latest
 ```
 
-### docker-compose 示例
+#### docker run（MySQL）
+
+```bash
+docker run -d \
+  --name url-destroyer \
+  -p 8087:80 \
+  -e DB_DRIVER=mysql \
+  -e DB_HOST=mysql.example.com \
+  -e DB_PORT=3306 \
+  -e DB_DATABASE=url_destroyer \
+  -e DB_USERNAME=root \
+  -e DB_PASSWORD=your-db-password \
+  -e DB_TABLE_PREFIX=ud_ \
+  -e ADMIN_PASSWORD=my-secret-password \
+  mitchll1214/url-destroyer:latest
+```
+
+> 💡 MySQL 模式下首次启动将自动创建所有带前缀的数据表。
+
+#### docker-compose（含 MySQL 配置）
 
 ```yaml
 services:
@@ -209,17 +257,27 @@ services:
     ports:
       - "8087:80"
     volumes:
-      - ./data:/var/www/data
+      - ./data:/var/www/data     # SQLite 模式需要；MySQL 可选
     environment:
-      - ADMIN_PASSWORD=my-secure-password
+      - ADMIN_PASSWORD=my-secret-password
       - DEFAULT_ACCESS_TIMEOUT=48
       - DEFAULT_ABSOLUTE_EXPIRY_HOURS=336
       - BASE_URL=https://links.example.com
+      - DB_TABLE_PREFIX=ud_
+      # MySQL 模式（取消注释以切换）
+      # - DB_DRIVER=mysql
+      # - DB_HOST=mysql-container
+      # - DB_PORT=3306
+      # - DB_DATABASE=url_destroyer
+      # - DB_USERNAME=root
+      # - DB_PASSWORD=your-db-password
 ```
 
 ### 数据持久化
 
-数据库文件 `app.db` 存放在挂载的 `/var/www/data` 目录中。确保该目录映射到宿主机固定路径，即使删除容器、更新镜像，数据也不会丢失。
+**SQLite**：数据库文件 `app.db` 存放在挂载的 `/var/www/data` 目录中。确保该目录映射到宿主机固定路径，即使删除容器、更新镜像，数据也不会丢失。
+
+**MySQL**：数据存储在外部 MySQL 服务器中，升级镜像不会影响数据。无需挂载数据卷。
 
 > ⚠️ 更新镜像时**不要**使用 `docker compose down -v`，`-v` 会删除数据卷。正确流程：
 > ```bash
@@ -228,7 +286,10 @@ services:
 
 ## 📊 数据库
 
-### links
+> 📌 默认表名前缀为 `ud_`，可通过 `DB_TABLE_PREFIX` 环境变量修改。
+> 下表以默认前缀为例，实际表名 = `{DB_TABLE_PREFIX}{表名}`（如 `ud_links`）。
+
+### ud_links
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -246,19 +307,19 @@ services:
 | first_accessed_at | TEXT | 首次访问时间 |
 | expires_at | TEXT | 过期时间 |
 
-### access_logs
+### ud_access_logs
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | id | INTEGER | 主键 |
-| link_id | INTEGER | 外键 → links.id |
+| link_id | INTEGER | 外键 → ud_links.id |
 | ip | TEXT | 访问者 IP |
 | user_agent | TEXT | 浏览器 UA |
 | referer | TEXT | 来源页面 |
 | form_data | TEXT | 提交的表单数据（JSON） |
 | accessed_at | TEXT | 访问时间 |
 
-### form_drafts
+### ud_form_drafts
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -266,7 +327,7 @@ services:
 | form_data | TEXT | 草稿表单数据（JSON） |
 | updated_at | TEXT | 最后更新时间 |
 
-### login_attempts
+### ud_login_attempts
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
