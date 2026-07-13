@@ -8,14 +8,21 @@ set -e
 if [ -n "$DB_PATH" ]; then
     DB_FILE="$DB_PATH"
     DATA_DIR="$(dirname "$DB_FILE")"
-    echo "  ℹ DB_PATH 环境变量: ${DB_FILE}"
 elif [ -n "$DATA_DIR" ]; then
-    DATA_DIR="$DATA_DIR"
     DB_FILE="$DATA_DIR/app.db"
-    echo "  ℹ DATA_DIR 环境变量: ${DATA_DIR}"
 else
     DATA_DIR="/var/www/data"
     DB_FILE="$DATA_DIR/app.db"
+fi
+
+# ── Detect whether the data directory is a mounted volume ──
+# 通过 /proc/mounts 检查数据目录是否挂载了宿主机目录或命名卷
+# 如果没有挂载，容器删除后数据会丢失
+IS_MOUNTED=false
+if [ -f /proc/mounts ] && grep -qE " ${DATA_DIR}(/| |$)" /proc/mounts 2>/dev/null; then
+    IS_MOUNTED=true
+elif mountpoint -q "$DATA_DIR" 2>/dev/null; then
+    IS_MOUNTED=true
 fi
 
 # ── Permissions ──
@@ -34,6 +41,12 @@ echo "  🔗 url-destroyer — 链接销毁系统"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  📁 数据目录: ${DATA_DIR}"
 echo "  🗄️  数据库:  ${DB_FILE}"
+
+if $IS_MOUNTED; then
+    echo "  🔒 数据卷:   已挂载 ✓"
+else
+    echo "  ⚠️  数据卷:   未挂载 — 数据不会持久化！"
+fi
 
 # ── Database check ──
 if [ -f "$DB_FILE" ]; then
@@ -54,26 +67,43 @@ else
         ls -lhA "$DATA_DIR" 2>/dev/null | tail -n +2 | while IFS= read -r l; do echo "     $l"; done
     else
         echo ""
-        echo "  ╔══════════════════════════════════════════════╗"
-        echo "  ║  ⚠️  数据目录为空 — 数据库尚未创建            ║"
-        echo "  ║                                              ║"
-        echo "  ║  检查点：                                     ║"
-        echo "  ║                                              ║"
-        echo "  ║  • 数据目录: ${DATA_DIR}                  ║"
-        echo "  ║  • 数据库文件: ${DB_FILE}                 ║"
-        echo "  ║                                              ║"
-        echo "  ║  首次启动正常，更新镜像后出现则说明：           ║"
-        echo "  ║  旧容器中的数据未持久化到宿主机。               ║"
-        echo "  ║                                              ║"
-        echo "  ║  解决方法：                                    ║"
-        echo "  ║  1. 确认使用 docker-compose.yml 启动           ║"
-        echo "  ║  2. 宿主机 ${DATA_DIR##*/} 目录应有旧 app.db  ║"
-        echo "  ║  3. 或用 .env 设 DATA_DIR=/固定/路径/data      ║"
-        echo "  ║  4. docker run 请加 -v 挂载数据卷               ║"
-        echo "  ╚══════════════════════════════════════════════╝"
-        echo ""
-        echo "  💡 如需查看当前挂载情况，执行:"
-        echo "     docker inspect <容器名> | grep -A 5 Mounts"
+        if $IS_MOUNTED; then
+            # 卷已挂载但数据库不存在 — 首次启动或数据卷为空
+            echo "  ╔══════════════════════════════════════════════╗"
+            echo "  ║  ℹ️  首次启动 — 将在后台创建新数据库          ║"
+            echo "  ║                                              ║"
+            echo "  ║  数据卷已挂载，数据将持久化保存。               ║"
+            echo "  ║  首次访问后台页面时将自动创建数据库。           ║"
+            echo "  ╚══════════════════════════════════════════════╝"
+        else
+            # 无数据卷挂载 — 容器删除后数据丢失
+            echo "  ╔══════════════════════════════════════════════╗"
+            echo "  ║  🚨  未检测到数据卷挂载！                     ║"
+            echo "  ║                                              ║"
+            echo "  ║  ⚠️  当前数据库仅存在于容器临时存储中，         ║"
+            echo "  ║  容器删除后所有数据将丢失！                    ║"
+            echo "  ║                                              ║"
+            echo "  ║  🔧 解决方法：                                ║"
+            echo "  ║                                              ║"
+            echo "  ║  方案 A — 使用 docker-compose（推荐）：        ║"
+            echo "  ║    docker-compose up -d                       ║"
+            echo "  ║                                              ║"
+            echo "  ║  方案 B — docker run 加 -v 挂载：              ║"
+            echo "  ║    mkdir -p ./data                            ║"
+            echo "  ║    docker run -d \\                            ║"
+            echo "  ║      -p 1000:80 \\                             ║"
+            echo "  ║      -v \"$(pwd)/data:/var/www/data\" \\         ║"
+            echo "  ║      -e DB_PATH=/var/www/data/app.db \\        ║"
+            echo "  ║      mitchll1214/url-destroyer:latest         ║"
+            echo "  ║                                              ║"
+            echo "  ║  方案 C — 使用 Docker 命名卷（自动管理）：      ║"
+            echo "  ║    docker volume create url-destroyer-data     ║"
+            echo "  ║    docker run -d \\                            ║"
+            echo "  ║      -p 1000:80 \\                             ║"
+            echo "  ║      -v url-destroyer-data:/var/www/data \\    ║"
+            echo "  ║      mitchll1214/url-destroyer:latest         ║"
+            echo "  ╚══════════════════════════════════════════════╝"
+        fi
         echo ""
     fi
 fi
