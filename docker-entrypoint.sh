@@ -2,8 +2,21 @@
 # Docker entrypoint — fix permissions on mounted volume, then start Apache
 set -e
 
-DATA_DIR="/var/www/data"
-DB_FILE="$DATA_DIR/app.db"
+# ── Resolve database path ──
+# 优先级：DB_PATH 环境变量 > DATA_DIR 环境变量 > 默认路径
+# 必须与 www/config.php 中的 DB_PATH 逻辑保持一致
+if [ -n "$DB_PATH" ]; then
+    DB_FILE="$DB_PATH"
+    DATA_DIR="$(dirname "$DB_FILE")"
+    echo "  ℹ DB_PATH 环境变量: ${DB_FILE}"
+elif [ -n "$DATA_DIR" ]; then
+    DATA_DIR="$DATA_DIR"
+    DB_FILE="$DATA_DIR/app.db"
+    echo "  ℹ DATA_DIR 环境变量: ${DATA_DIR}"
+else
+    DATA_DIR="/var/www/data"
+    DB_FILE="$DATA_DIR/app.db"
+fi
 
 # ── Permissions ──
 if [ -d "$DATA_DIR" ]; then
@@ -19,17 +32,19 @@ fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  🔗 url-destroyer — 链接销毁系统"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  📁 数据目录: ${DATA_DIR}"
+echo "  🗄️  数据库:  ${DB_FILE}"
 
 # ── Database check ──
 if [ -f "$DB_FILE" ]; then
     DB_SIZE=$(du -h "$DB_FILE" 2>/dev/null | cut -f1)
     echo "  ✓ 数据库: ${DB_SIZE}"
-    COUNT=$(php -r '
+    COUNT=$(php -r "
         try {
-            $pdo = new PDO("sqlite:/var/www/data/app.db", null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-            echo $pdo->query("SELECT COUNT(*) FROM links")->fetchColumn();
-        } catch (Exception $e) { echo "?"; }
-    ' 2>/dev/null)
+            \$pdo = new PDO('sqlite:${DB_FILE}', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+            echo \$pdo->query('SELECT COUNT(*) FROM links')->fetchColumn();
+        } catch (Exception \$e) { echo '?'; }
+    " 2>/dev/null)
     echo "  ✓ 链接记录: ${COUNT} 条"
 else
     # Check: is the data dir truly empty, or just missing app.db?
@@ -42,14 +57,23 @@ else
         echo "  ╔══════════════════════════════════════════════╗"
         echo "  ║  ⚠️  数据目录为空 — 数据库尚未创建            ║"
         echo "  ║                                              ║"
+        echo "  ║  检查点：                                     ║"
+        echo "  ║                                              ║"
+        echo "  ║  • 数据目录: ${DATA_DIR}                  ║"
+        echo "  ║  • 数据库文件: ${DB_FILE}                 ║"
+        echo "  ║                                              ║"
         echo "  ║  首次启动正常，更新镜像后出现则说明：           ║"
         echo "  ║  旧容器中的数据未持久化到宿主机。               ║"
         echo "  ║                                              ║"
         echo "  ║  解决方法：                                    ║"
-        echo "  ║  1. 确保 docker-compose.yml 在同目录运行        ║"
-        echo "  ║  2. 宿主机 ./data 目录应包含旧 app.db          ║"
+        echo "  ║  1. 确认使用 docker-compose.yml 启动           ║"
+        echo "  ║  2. 宿主机 ${DATA_DIR##*/} 目录应有旧 app.db  ║"
         echo "  ║  3. 或用 .env 设 DATA_DIR=/固定/路径/data      ║"
+        echo "  ║  4. docker run 请加 -v 挂载数据卷               ║"
         echo "  ╚══════════════════════════════════════════════╝"
+        echo ""
+        echo "  💡 如需查看当前挂载情况，执行:"
+        echo "     docker inspect <容器名> | grep -A 5 Mounts"
         echo ""
     fi
 fi

@@ -28,4 +28,4 @@ services:
       - DEFAULT_ABSOLUTE_EXPIRY_HOURS=168 # 默认未打开过期（小时）= 7 天
       # - BASE_URL=https://your-domain.com # 站点 URL（反向代理时设置）
       # - ADMIN_PATH=admin                 # 后台路径（防扫描可改）
-      # - DB_PATH=/var/www/data/app.db     # 数据库文件路径
+      - DB_PATH=/var/www/data/app.db     # 数据库文件路径（entrypoint 和 PHP 均从此读取，保持一致）
