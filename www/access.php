@@ -45,7 +45,7 @@ $isPost = ($_SERVER['REQUEST_METHOD'] === 'POST');
 if ($isPost && empty($_POST['__final_submit'])) {
     $postCopy = $_POST;
     unset($postCopy['token']);
-    DB::prepare("INSERT OR REPLACE INTO form_drafts (token, form_data, updated_at) VALUES (:t, :d, datetime('now', 'localtime'))"))
+    DB::prepare("INSERT OR REPLACE INTO form_drafts (token, form_data, updated_at) VALUES (:t, :d, datetime('now', 'localtime'))")
        ->execute([':t' => $token, ':d' => json_encode($postCopy, JSON_UNESCAPED_UNICODE)]);
     // Upgrade from active to draft on first autosave
     if ($link['status'] === 'active') {
@@ -65,7 +65,7 @@ $draftData = json_decode($draft->fetchColumn() ?: '{}', true) ?: [];
 if ($link['first_accessed_at'] === null && $link['status'] === 'active') {
     $timeoutSeconds = (int)$link['access_timeout'];
     $expiresAt = (clone $now)->modify("+{$timeoutSeconds} seconds")->format('Y-m-d H:i:s');
-    DB::prepare("UPDATE links SET first_accessed_at=datetime('now', 'localtime'), expires_at=:exp WHERE id=:id"))
+    DB::prepare("UPDATE links SET first_accessed_at=datetime('now', 'localtime'), expires_at=:exp WHERE id=:id")
        ->execute([':exp' => $expiresAt, ':id' => $link['id']]);
     $link['first_accessed_at'] = $now->format('Y-m-d H:i:s');
 }
@@ -102,7 +102,7 @@ if ($isPost && !empty($_POST['__final_submit'])) {
     $postCopy = $_POST;
     unset($postCopy['token'], $postCopy['__final_submit']);
     $formData = json_encode($postCopy, JSON_UNESCAPED_UNICODE);
-    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, referer, form_data, accessed_at) VALUES (:lid, :ip, :ua, :ref, :fd, datetime('now', 'localtime'))"))
+    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, referer, form_data, accessed_at) VALUES (:lid, :ip, :ua, :ref, :fd, datetime('now', 'localtime'))")
        ->execute([':lid' => $link['id'], ':ip' => $ip, ':ua' => $ua, ':ref' => $ref, ':fd' => $formData]);
 
     // Transition: draft → submitted (or expired if expire_on_submit=1)

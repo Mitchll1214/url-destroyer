@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($newPass !== $confirm) {
             $message = '❌ 两次输入的新密码不一致';
         } else {
-            DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', :v)"))->execute([':v' => $newPass]);
+            DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', :v)")->execute([':v' => $newPass]);
             $message = '✅ 密码已修改，下次登录生效';
         }
     }
@@ -32,14 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['default_access_timeout'])) {
         $timeoutHours = max(0.1, (float)$_POST['default_access_timeout']);
         $timeoutSeconds = (int)($timeoutHours * 3600);
-        DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_access_timeout', :v)"))
+        DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_access_timeout', :v)")
            ->execute([':v' => $timeoutSeconds]);
     }
 
     // Update default absolute expiry
     if (isset($_POST['default_absolute_expiry_hours'])) {
         $expiry = max(1, (int)$_POST['default_absolute_expiry_hours']);
-        DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_absolute_expiry_hours', :v)"))
+        DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('default_absolute_expiry_hours', :v)")
            ->execute([':v' => $expiry]);
     }
 
