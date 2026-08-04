@@ -21,19 +21,20 @@ services:
       - ${DATA_DIR:-./data}:/var/www/data
       - ./templates:/var/www/templates
     restart: unless-stopped
-    # ── 环境变量配置（可选，不设置则使用默认值）──
+    # ── 环境变量配置（优先读取 .env 文件，未设置时用默认值）──
+    # 修改方式：编辑同目录 .env 文件（复制 .env.example 为 .env）后执行 docker compose up -d
     environment:
-      - ADMIN_PASSWORD=[redacted]           # 管理员初始密码
-      - DEFAULT_ACCESS_TIMEOUT=24         # 默认访问超时（小时）
-      - DEFAULT_ABSOLUTE_EXPIRY_HOURS=168 # 默认未打开过期（小时）= 7 天
-      # - BASE_URL=https://your-domain.com # 站点 URL（反向代理时设置）
-      # - ADMIN_PATH=admin                 # 后台路径（防扫描可改）
-      - DB_PATH=/var/www/data/app.db     # 数据库文件路径（entrypoint 和 PHP 均从此读取，保持一致）
-      # - DB_TABLE_PREFIX=ud_            # 表名前缀（默认 ud_，设为空则不使用前缀）
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}           # 管理员初始密码
+      - DEFAULT_ACCESS_TIMEOUT=${DEFAULT_ACCESS_TIMEOUT:-24} # 默认访问超时（小时）
+      - DEFAULT_ABSOLUTE_EXPIRY_HOURS=${DEFAULT_ABSOLUTE_EXPIRY_HOURS:-168} # 默认未打开过期（小时）
+      # - BASE_URL=${BASE_URL:-}           # 站点 URL（反向代理时设置）
+      # - ADMIN_PATH=${ADMIN_PATH:-admin}  # 后台路径（防扫描可改）
+      - DB_PATH=${DB_PATH:-/var/www/data/app.db}  # 数据库文件路径
+      # - DB_TABLE_PREFIX=${DB_TABLE_PREFIX:-ud_}   # 表名前缀（默认 ud_）
       # ── MySQL 配置（取消注释即可切换数据库引擎） ──
-      # - DB_DRIVER=mysql                 # 切换为 MySQL（默认 sqlite）
-      # - DB_HOST=mysql-container         # MySQL 主机名/服务名
-      # - DB_PORT=3306                    # MySQL 端口
-      # - DB_DATABASE=url_destroyer       # 数据库名
-      # - DB_USERNAME=root                # 用户名
-      # - DB_PASSWORD=secret              # 密码
+      # - DB_DRIVER=${DB_DRIVER:-sqlite}           # 切换为 MySQL（默认 sqlite）
+      # - DB_HOST=${DB_HOST:-mysql-container}      # MySQL 主机名/服务名
+      # - DB_PORT=${DB_PORT:-3306}                 # MySQL 端口
+      # - DB_DATABASE=${DB_DATABASE:-url_destroyer} # 数据库名
+      # - DB_USERNAME=${DB_USERNAME:-root}         # 用户名
+      # - DB_PASSWORD=${DB_PASSWORD:-secret}       # 密码
