@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380" role="img" aria-labelledby="title desc">
+  <title id="title">url-destroyer — 一次性链接销毁系统</title>
+  <desc id="desc">生成一次性链接，用户限时填写表单，提交或超时后链接自动销毁。右侧为链接生命周期：创建、打开、填写、提交、销毁。</desc>
+
+  <rect width="1200" height="380" rx="24" fill="#0B0E11"/>
+
+  <!-- ── 左侧：标题区 ── -->
+  <g transform="translate(56 44)">
+    <!-- category eyebrow -->
+    <rect x="0" y="0" width="158" height="26" rx="13" fill="#14181D" stroke="#262C34"/>
+    <text x="79" y="18" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#8A939E" letter-spacing="1.5">ONE-TIME LINK SYSTEM</text>
+
+    <!-- title -->
+    <text x="0" y="92" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="64" font-weight="700" fill="#F2F0EA">url-destroyer</text>
+
+    <!-- description -->
+    <text x="0" y="140" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="21" fill="#F2F0EA">生成一次性链接，用户限时填写表单</text>
+    <text x="0" y="172" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="21" fill="#F2F0EA">提交或超时后链接<text font-weight="600" fill="#E5534B">自动销毁</text>，数据自动归档</text>
+
+    <!-- mono metadata -->
+    <rect x="0" y="212" width="560" height="44" rx="10" fill="#14181D" stroke="#262C34"/>
+    <text x="18" y="240" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" fill="#E8A33D">$ docker run -d -p 8087:80 mitchll1214/url-destroyer</text>
+
+    <!-- footer metadata -->
+    <text x="0" y="296" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#8A939E">PHP 8.2</text>
+    <circle cx="52" cy="291" r="2" fill="#262C34"/>
+    <text x="62" y="296" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#8A939E">SQLite / MySQL</text>
+    <circle cx="150" cy="291" r="2" fill="#262C34"/>
+    <text x="160" y="296" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#8A939E">Docker 一键部署</text>
+  </g>
+
+  <!-- ── 右侧：链接生命周期状态机 ── -->
+  <g transform="translate(700 44)">
+    <!-- panel bg -->
+    <rect x="0" y="0" width="444" height="292" rx="14" fill="#14181D" stroke="#262C34"/>
+
+    <!-- panel header -->
+    <text x="22" y="30" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8A939E" letter-spacing="1">LINK LIFECYCLE</text>
+
+    <!-- row 1: 创建 → 打开 → 填写 → 提交 -->
+    <!-- node 1 创建 -->
+    <rect x="22" y="58" width="86" height="52" rx="9" fill="#0B0E11" stroke="#262C34"/>
+    <text x="65" y="82" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#F2F0EA">创建</text>
+    <text x="65" y="101" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#8A939E">未打开</text>
+
+    <!-- arrow 1 -->
+    <path d="M 108 84 L 122 84" stroke="#8A939E" stroke-width="1.5"/>
+    <path d="M 122 84 L 115 80 M 122 84 L 115 88" stroke="#8A939E" stroke-width="1.5" fill="none"/>
+
+    <!-- node 2 打开 -->
+    <rect x="124" y="58" width="86" height="52" rx="9" fill="#0B0E11" stroke="#262C34"/>
+    <text x="167" y="82" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#F2F0EA">打开</text>
+    <text x="167" y="101" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#8A939E">已访问</text>
+
+    <!-- arrow 2 -->
+    <path d="M 210 84 L 224 84" stroke="#8A939E" stroke-width="1.5"/>
+    <path d="M 224 84 L 217 80 M 224 84 L 217 88" stroke="#8A939E" stroke-width="1.5" fill="none"/>
+
+    <!-- node 3 填写 -->
+    <rect x="226" y="58" width="86" height="52" rx="9" fill="#0B0E11" stroke="#E8A33D" stroke-opacity="0.5"/>
+    <text x="269" y="82" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#F2F0EA">填写</text>
+    <text x="269" y="101" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#8A939E">草稿自动保存</text>
+
+    <!-- arrow 3 -->
+    <path d="M 312 84 L 326 84" stroke="#8A939E" stroke-width="1.5"/>
+    <path d="M 326 84 L 319 80 M 326 84 L 319 88" stroke="#8A939E" stroke-width="1.5" fill="none"/>
+
+    <!-- node 4 提交 -->
+    <rect x="328" y="58" width="94" height="52" rx="9" fill="#0B0E11" stroke="#262C34"/>
+    <text x="375" y="82" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#F2F0EA">提交</text>
+    <text x="375" y="101" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#8A939E">数据已归档</text>
+
+    <!-- row 2: 销毁 node（危险色 + 断链 motif） -->
+    <rect x="150" y="156" width="144" height="64" rx="10" fill="#E5534B" fill-opacity="0.12" stroke="#E5534B"/>
+    <text x="222" y="186" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="20" font-weight="700" fill="#E5534B">销毁</text>
+    <text x="222" y="206" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#8A939E">链接永久失效</text>
+
+    <!-- broken link motif above destroy node -->
+    <g transform="translate(222 236)">
+      <circle cx="-18" cy="0" r="7" fill="none" stroke="#E5534B" stroke-width="2"/>
+      <circle cx="18" cy="0" r="7" fill="none" stroke="#262C34" stroke-width="2"/>
+      <path d="M -11 0 L -4 0 M 4 0 L 11 0" stroke="#E5534B" stroke-width="2"/>
+    </g>
+
+    <!-- arrow: 提交 → 销毁（提交即失效） -->
+    <path d="M 375 110 L 375 140 L 296 140 L 296 154" stroke="#E5534B" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+    <path d="M 296 154 L 292 147 M 296 154 L 300 147" stroke="#E5534B" stroke-width="1.5" fill="none"/>
+    <text x="344" y="134" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="12" fill="#8A939E">提交即失效</text>
+
+    <!-- arrow: 提交 → 等待 → 销毁（超时） -->
+    <path d="M 340 110 L 340 236 L 230 236" stroke="#8A939E" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+    <path d="M 230 236 L 237 232 M 230 236 L 237 240" stroke="#8A939E" stroke-width="1.5" fill="none"/>
+    <text x="330" y="262" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="12" fill="#8A939E">超时 / 超次自动销毁</text>
+  </g>
+</svg>
