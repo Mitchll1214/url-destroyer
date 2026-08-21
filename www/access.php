@@ -162,7 +162,8 @@ function renderDefaultForm(string $token, bool $submitted, array $draftData = []
         'subtitle' => '请填写以下信息，提交后链接将自动失效',
         'submit_text' => '提交',
         'success_title' => '提交成功！',
-        'success_text' => '感谢您的参与，您的数据已记录。',
+        'success_text' => '提交成功！！',
+        'guided' => true,
         'fields' => [
             ['name' => 'name',  'label' => '姓名',   'type' => 'text',     'required' => true,  'placeholder' => '请输入您的姓名', 'default_value' => ''],
             ['name' => 'email', 'label' => '邮箱',   'type' => 'email',    'required' => true,  'placeholder' => 'example@mail.com', 'default_value' => ''],
@@ -177,12 +178,14 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
     $title   = htmlspecialchars($cfg['title'] ?? '信息收集表');
     $subtitle= htmlspecialchars($cfg['subtitle'] ?? '');
     $submit  = htmlspecialchars($cfg['submit_text'] ?? '提交');
-    $okTitle = htmlspecialchars($cfg['success_title'] ?? '提交成功');
-    $okText  = htmlspecialchars($cfg['success_text'] ?? '感谢您的参与，数据已记录。');
+    $okTitle = htmlspecialchars($cfg['success_title'] ?? '提交成功！');
+    $okText  = htmlspecialchars($cfg['success_text'] ?? '提交成功！！');
     $fields  = $cfg['fields'] ?? [];
+    $guided  = isset($cfg['guided']) ? (bool)$cfg['guided'] : true;
     $hasDraft = !empty($draftData);
     $draftJS  = $hasDraft ? 'true' : 'false';
     $draftJSON = json_encode($draftData, JSON_HEX_TAG | JSON_HEX_APOS);
+    $guidedJS  = $guided ? 'true' : 'false';
     ?>
     <!DOCTYPE html>
     <html lang="zh">
@@ -232,6 +235,25 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
             }
             .fb-subtitle{text-align:center;color:#9498a4;font-size:14px;margin-bottom:28px;line-height:1.5}
             .fb-field{margin-bottom:18px}
+            .fb-field.collapsed{
+                max-height:0;margin-bottom:0;opacity:0;overflow:hidden;
+                transition:max-height .5s ease,opacity .5s ease,margin-bottom .5s ease;
+            }
+            /* 校验失败状态 */
+            .fb-field.invalid input,.fb-field.invalid select,.fb-field.invalid textarea{
+                border-color:#d93b3b;background:#fff5f5;
+                box-shadow:0 0 0 3px rgba(217,59,59,.12);
+            }
+            .fb-invalid-msg{
+                display:none;color:#d93b3b;font-size:12px;font-weight:600;
+                margin-top:5px;line-height:1.4;
+            }
+            .fb-field.invalid .fb-invalid-msg{display:block}
+            /* 成功后折叠时清除校验态 */
+            .fb-field.invalid.collapsed{border-color:transparent;background:none;box-shadow:none}
+            .fb-field input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+            .fb-field input[type="number"]::-webkit-outer-spin-button,
+            .fb-field input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
             .fb-field label{
                 display:block;font-size:13px;font-weight:600;color:#4a4d58;
                 margin-bottom:6px;letter-spacing:.15px;
@@ -343,7 +365,7 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
                 // Draft value takes priority over default_value
                 $val   = htmlspecialchars($draftData[$f['name']] ?? $f['default_value'] ?? '');
             ?>
-            <div class="fb-field">
+            <div class="fb-field" data-name="<?= $name ?>" data-type="<?= $type ?>" data-required="<?= $req ? '1' : '0' ?>">
                 <label><?= $label ?><?= $req ? ' <span class="req">*</span>' : '' ?></label>
                 <?php if ($type === 'textarea'): ?>
                     <textarea name="<?= $name ?>" placeholder="<?= $ph ?>" <?= $req ? 'required' : '' ?> data-field><?= $val ?></textarea>
@@ -372,6 +394,7 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
         var token = <?= json_encode($token) ?>;
         var timer = null;
         var lastSaved = '';
+        var guided = <?= $guidedJS ?>;
 
         // Use form submit event instead of button click — more reliable
         form.addEventListener('submit', function(e){
@@ -419,6 +442,137 @@ function renderFormBuilder(array $cfg, string $token, bool $submitted, array $dr
         <?php if ($hasDraft): ?>
         showIndicator('📋 已恢复上次填写的内容');
         <?php endif; ?>
+
+        // ── Guided mode: collapse filled fields (一个填完隐藏一个) ──
+        if (guided) {
+            // field groups in DOM order (wrapped by .fb-field with data-name)
+            var fieldElems = Array.prototype.slice.call(
+                document.querySelectorAll('#fbForm .fb-field')
+            );
+
+            // 注入校验提示条（每个字段一个）
+            fieldElems.forEach(function(el){
+                if (!el.querySelector('.fb-invalid-msg')) {
+                    var msg = document.createElement('div');
+                    msg.className = 'fb-invalid-msg';
+                    el.appendChild(msg);
+                }
+            });
+
+            function fieldInput(el){
+                var name = el.getAttribute('data-name');
+                if (!name) return null;
+                return form.querySelector(
+                    'input[name="'+name+'"],select[name="'+name+'"],textarea[name="'+name+'"]'
+                );
+            }
+
+            function guidedGet(el){
+                var input = fieldInput(el);
+                if (!input) return '';
+                if (input.type === 'checkbox' || input.type === 'radio') return '';
+                return (input.value || '').trim();
+            }
+
+            // 正在聚焦编辑的字段视为"未完成",绝不在输入/失焦过程中视为完成折叠
+            function isEditing(el){
+                var input = fieldInput(el);
+                return input && document.activeElement === input;
+            }
+
+            // ── 数据格式校验：合法返回 true，非法返回 false 并显示提示 ──
+            function validateField(el){
+                var input = fieldInput(el);
+                var msgEl = el.querySelector('.fb-invalid-msg');
+                var clear = function(){ el.classList.remove('invalid'); if (msgEl) msgEl.textContent = ''; return true; };
+                if (!input) return true;
+                var val = (input.value || '').trim();
+                var required = el.getAttribute('data-required') === '1';
+                var type = el.getAttribute('data-type') || 'text';
+                var label = (el.querySelector('label') || {}).textContent || '';
+
+                function fail(text){
+                    el.classList.add('invalid');
+                    if (msgEl) msgEl.textContent = (label ? label.replace(/[ *\n]+/g,'') : '') + text;
+                    return false;
+                }
+
+                // 空值：必填则报错，非必填视为尚未填写（不折叠、不报错）
+                if (val === '') {
+                    if (required) return fail('不能为空');
+                    return true;
+                }
+
+                var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                switch (type) {
+                    case 'email':
+                        return emailRe.test(val) ? clear() : fail('：邮箱格式不正确');
+                    case 'tel':
+                        return /^[0-9+\-\s()]+$/.test(val) && /\d/.test(val)
+                            ? clear() : fail('：电话号码格式不正确');
+                    case 'number': {
+                        if (isNaN(Number(val))) return fail('：请输入有效数字');
+                        return clear();
+                    }
+                    case 'date': {
+                        // YYYY-MM-DD 且为真实日期
+                        if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) return fail('：日期格式应为 YYYY-MM-DD');
+                        var parts = val.split('-');
+                        var y = +parts[0], mo = +parts[1], d = +parts[2];
+                        if (y < 1900 || mo < 1 || mo > 12 || d < 1 || d > 31) return fail('：日期无效');
+                        var dt = new Date(y, mo - 1, d);
+                        if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) {
+                            return fail('：日期无效');
+                        }
+                        return clear();
+                    }
+                    case 'select':
+                        // 已选真实选项（value 非空）
+                        return val !== '' ? clear() : fail('：请选择');
+                    default:
+                        return clear();
+                }
+            }
+
+            function guideFocusFirstUnfilled(){
+                for (var i = 0; i < fieldElems.length; i++){
+                    var el = fieldElems[i];
+                    if (!el.classList.contains('collapsed') && guidedGet(el) === '') {
+                        var f = el.querySelector('input,select,textarea');
+                        if (f) { f.focus(); break; }
+                    }
+                }
+            }
+
+            function collapseFilled(){
+                fieldElems.forEach(function(el){
+                    // 正在编辑的字段不处理
+                    if (isEditing(el)) return;
+                    // 空值（未填写）不折叠
+                    if (guidedGet(el) === '') return;
+                    // 格式校验：不合法则不隐藏，并已在 validateField 中显示提示
+                    if (!validateField(el)) return;
+                    if (!el.classList.contains('collapsed')) {
+                        el.classList.add('collapsed');
+                    }
+                });
+            }
+
+            // 初始:折叠已预填(草稿/默认值)且未聚焦且格式合法的字段,并聚焦首个待填字段
+            collapseFilled();
+            guideFocusFirstUnfilled();
+
+            // 输入时即时清除该校验失败标记（让用户修正时不残留红框）；失焦时才做折叠判定
+            form.querySelectorAll('[data-field]').forEach(function(el){
+                var field = el.closest('.fb-field');
+                el.addEventListener('input', function(){
+                    if (field) field.classList.remove('invalid');
+                });
+                el.addEventListener('blur', function(){ setTimeout(collapseFilled, 60); });
+                el.addEventListener('change', function(){ setTimeout(collapseFilled, 60); });
+            });
+        }
     })();
     </script>
     <?php endif; ?>

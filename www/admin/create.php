@@ -39,7 +39,8 @@ $defaultFormConfig = json_encode([
     'subtitle' => '请填写以下信息，提交后链接将自动失效',
     'submit_text' => '提交',
     'success_title' => '提交成功！',
-    'success_text' => '感谢您的参与，您的数据已记录。',
+    'success_text' => '提交成功！！',
+    'guided' => true,
     'fields' => [
         ['name' => 'name',  'label' => '姓名',   'type' => 'text',     'required' => true,  'placeholder' => '请输入您的姓名', 'default_value' => ''],
         ['name' => 'email', 'label' => '邮箱',   'type' => 'email',    'required' => true,  'placeholder' => 'example@mail.com', 'default_value' => ''],
@@ -171,7 +172,14 @@ adminHeader('创建链接', 'create');
                             <div class="form-group"><label>提交按钮文字</label><input type="text" id="cfgSubmit" value="提交"></div>
                         </div>
                         <div class="form-group"><label>提交成功标题</label><input type="text" id="cfgOkTitle" value="提交成功！"></div>
-                        <div class="form-group"><label>提交成功提示</label><input type="text" id="cfgOkText" value="感谢您的参与，您的数据已记录。"></div>
+                        <div class="form-group"><label>提交成功提示</label><input type="text" id="cfgOkText" value="提交成功！！"></div>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;">
+                                <input type="checkbox" id="cfgGuided" checked style="width:18px;height:18px;cursor:pointer;accent-color:#c9403a;">
+                                <span>引导式填写（填一个隐藏一个）</span>
+                            </label>
+                            <span class="text-muted">开启后，用户填完一个字段该字段自动淡出隐藏，聚焦未填字段</span>
+                        </div>
                     </div>
 
                     <div class="card" style="padding:16px;">
@@ -279,6 +287,7 @@ function buildConfig() {
         submit_text: document.getElementById('cfgSubmit').value,
         success_title: document.getElementById('cfgOkTitle').value,
         success_text: document.getElementById('cfgOkText').value,
+        guided: document.getElementById('cfgGuided').checked,
         fields: buildFieldData()
     };
 }
@@ -499,7 +508,7 @@ document.getElementById('createForm').addEventListener('submit', function(e) {
 });
 
 // ── Input sync triggers ──
-['cfgTitle','cfgSubtitle','cfgSubmit','cfgOkTitle','cfgOkText'].forEach(id => {
+['cfgTitle','cfgSubtitle','cfgSubmit','cfgOkTitle','cfgOkText','cfgGuided'].forEach(id => {
     document.getElementById(id).addEventListener('input', syncFields);
 });
 </script>
