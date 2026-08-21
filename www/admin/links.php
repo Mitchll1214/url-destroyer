@@ -52,7 +52,9 @@ $searchCampaign = trim($_GET['campaign'] ?? '');
 $dateFrom = $_GET['date_from'] ?? '';
 $dateTo   = $_GET['date_to'] ?? '';
 $page = max(1, (int)($_GET['page'] ?? 1));
-$perPage = 20;
+// 每页条数：默认 10，可选 10/20/50
+$rawPerPage = (int)($_GET['per_page'] ?? 10);
+$perPage = in_array($rawPerPage, [10, 20, 50], true) ? $rawPerPage : 10;
 
 $where = [];
 $params = [];
@@ -85,6 +87,7 @@ $countStmt = DB::prepare("SELECT COUNT(*) FROM links $whereClause");
 $countStmt->execute($params);
 $total = $countStmt->fetchColumn();
 $totalPages = max(1, ceil($total / $perPage));
+if ($page > $totalPages) $page = $totalPages; // 切每页条数后避免越界空页
 $offset = ($page - 1) * $perPage;
 
 $links = DB::prepare("SELECT * FROM links $whereClause ORDER BY id DESC LIMIT :limit OFFSET :offset");
@@ -130,10 +133,12 @@ adminHeader('链接列表', 'links');
     <div class="table-wrap">
     <table>
         <thead><tr>
-            <th>ID</th><th>活动</th><th>Token</th><th>状态</th><th>访问</th><th>超时</th><th>创建时间</th><th>首次访问</th><th>过期时间</th><th>操作</th>
+            <th>编号</th><th>活动</th><th>Token</th><th>状态</th><th>访问</th><th>超时</th><th>创建时间</th><th>首次访问</th><th>过期时间</th><th>操作</th>
         </tr></thead>
         <tbody>
+        <?php $num = $offset; ?>
         <?php foreach ($links as $row):
+            $num++;
             // Resolve display state
             if ($row['status'] === 'active') {
                 $displayState = empty($row['first_accessed_at']) ? 'unopened' : 'opened';
@@ -148,7 +153,7 @@ adminHeader('链接列表', 'links');
             $isAbsolutelyExpired = (time() > $absDeadline);
         ?>
         <tr>
-            <td>#<?= $row['id'] ?></td>
+            <td><?= $num ?></td>
             <td><?= htmlspecialchars($row['campaign_name'] ?: '-') ?></td>
             <td>
                 <code style="font-size:11px;"><?= htmlspecialchars(substr($row['token'], 0, 16)) ?>...</code>
@@ -189,25 +194,54 @@ adminHeader('链接列表', 'links');
             </td>
         </tr>
         <?php endforeach; ?>
-        <?php if ($links->rowCount() === 0): ?>
-        <tr class="empty-row"><td colspan="10">暂无数据</td></tr>
-        <?php endif; ?>
         </tbody>
     </table>
     </div>
 
-    <?php if ($totalPages > 1): ?>
-    <div class="pagination">
-        <?php for ($i = 1; $i <= $totalPages; $i++):
-            $query = http_build_query(array_filter(['status'=>$statusFilter, 'campaign'=>$searchCampaign, 'date_from'=>$dateFrom, 'date_to'=>$dateTo, 'page'=>$i]));
-        ?>
-            <a href="links.php?<?= $query ?>" class="<?= $i===$page ? 'current' : '' ?>"><?= $i ?></a>
-        <?php endfor; ?>
+    <?php
+    // 通用翻页查询参数（含 per_page，避免切页丢失每页条数）
+    $baseQuery = array_filter([
+        'status' => $statusFilter,
+        'campaign' => $searchCampaign,
+        'date_from' => $dateFrom,
+        'date_to' => $dateTo,
+        'per_page' => $perPage,
+    ], fn($v) => $v !== '' && $v !== null);
+    ?>
+    <?php if ($total > 0): ?>
+    <div class="pagination-row">
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination">
+            <a href="links.php?<?= http_build_query(array_merge($baseQuery, ['page' => max(1, $page - 1)])) ?>" class="<?= $page <= 1 ? 'disabled' : '' ?>">‹ 上一页</a>
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <a href="links.php?<?= http_build_query(array_merge($baseQuery, ['page' => $i])) ?>" class="<?= $i === $page ? 'current' : '' ?>"><?= $i ?></a>
+            <?php endfor; ?>
+            <a href="links.php?<?= http_build_query(array_merge($baseQuery, ['page' => min($totalPages, $page + 1)])) ?>" class="<?= $page >= $totalPages ? 'disabled' : '' ?>">下一页 ›</a>
+        </div>
+        <?php endif; ?>
+        <div class="per-page">
+            <span class="text-muted">每页</span>
+            <select id="perPageSelect" class="per-page-select">
+                <?php foreach ([10, 20, 50] as $pp): ?>
+                <option value="<?= http_build_query(array_merge($baseQuery, ['per_page' => $pp, 'page' => 1])) ?>" <?= $perPage === $pp ? 'selected' : '' ?>><?= $pp ?> 条</option>
+                <?php endforeach; ?>
+            </select>
+        </div>
     </div>
     <?php endif; ?>
 </div>
 
 <script>
+// 每页条数下拉：切换即跳转到对应筛选+条数的列表页
+(function(){
+    var sel = document.getElementById('perPageSelect');
+    if (!sel) return;
+    sel.addEventListener('change', function(){
+        var url = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].value : '';
+        if (url) location.href = 'links.php?' + url;
+    });
+})();
+
 // Copy link to clipboard (format: 【活动名称】：链接)
 document.querySelectorAll('.copy-link-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {

@@ -1150,6 +1150,48 @@ tbody .empty-row td {
     box-shadow: 0 2px 8px rgba(201, 64, 58, 0.22);
 }
 
+.pagination a.disabled {
+    opacity: .45;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+/* 分页 + 每页条数选择器 行布局 */
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+.pagination-row .pagination { margin-top: 0; }
+.per-page {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.per-page-select {
+    padding: 6px 10px;
+    border: 1.5px solid #dde0e7;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: #fff;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    min-width: 88px;
+}
+.per-page-select:hover,
+.per-page-select:focus {
+    border-color: var(--primary);
+    color: var(--primary);
+    outline: none;
+}
+.per-page .text-muted { font-size: 13px; }
+
 /* ================================================================
    17. LOGIN PAGE
    ================================================================ */
