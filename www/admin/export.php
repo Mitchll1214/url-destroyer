@@ -15,14 +15,11 @@ $searchCampaign = trim($_GET['campaign'] ?? '');
 $dateFrom = $_GET['date_from'] ?? '';
 $dateTo   = $_GET['date_to'] ?? '';
 
-// ── Build query: only opened or expired links (those that have been accessed) ──
-$where = ["status IN ('opened', 'expired')"];
+// ── Build query: match links by campaign/date filters only ──
+// 导出忽略状态筛选：只要满足活动/日期条件且存在提交数据（access_logs.form_data 非空）即导出，
+// 避免链接提交后状态变化（如 expire_on_submit → expired）导致有提交记录的链接被漏掉。
+$where = [];
 $params = [];
-
-if ($statusFilter && in_array($statusFilter, ['opened', 'expired'])) {
-    $where = ["status = :status"];
-    $params[':status'] = $statusFilter;
-}
 
 if ($searchCampaign !== '') {
     $where[] = "campaign_name LIKE :campaign";
@@ -37,7 +34,7 @@ if ($dateTo !== '') {
     $params[':date_to'] = $dateTo . ' 23:59:59';
 }
 
-$whereClause = 'WHERE ' . implode(' AND ', $where);
+$whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 // ── Fetch matching links ──
 $stmt = DB::prepare("SELECT * FROM links $whereClause ORDER BY campaign_name, id");
@@ -47,7 +44,7 @@ $links = $stmt->fetchAll();
 if (empty($links)) {
     adminHeader('导出数据', 'links');
     echo '<h1 class="page-title">📥 导出数据</h1>';
-    echo '<div class="alert alert-error">没有符合条件的已打开/已过期链接可导出。</div>';
+    echo '<div class="alert alert-error">没有符合条件的链接可导出。</div>';
     echo '<a href="links.php" class="btn btn-outline">← 返回链接列表</a>';
     adminFooter();
     exit;
@@ -96,17 +93,18 @@ $logs = $logStmt->fetchAll();
 
 // ── Build CSV ──
 $fieldNamesOrdered = array_keys($allFieldNames);
+$exportTime = date('Y-m-d H:i:s');
 
 // Headers: 第1行字段标签，第2行字段名，之后为数据
 $headerLabels = array_merge(
     ['活动名称', '链接ID', 'Token'],
     array_values($allFieldNames),
-    ['提交时间']
+    ['提交时间', '导出时间']
 );
 $headerNames = array_merge(
     ['campaign_name', 'link_id', 'token'],
     array_keys($allFieldNames),
-    ['accessed_at']
+    ['accessed_at', 'export_time']
 );
 
 $csvFilename = 'export_' . date('Ymd_His') . '.csv';
@@ -134,6 +132,7 @@ foreach ($logs as $log) {
         $row[] = $formData[$fn] ?? '';
     }
     $row[] = $log['accessed_at'];
+    $row[] = $exportTime;
     fputcsv($output, $row);
 }
 

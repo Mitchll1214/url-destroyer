@@ -16,18 +16,15 @@ if (isset($_POST['delete_id'])) {
     exit;
 }
 
-// Handle reactivate (expired → active) — only if not absolutely expired
+// Handle reactivate (expired → active) — supports permanently expired links too.
+// Reactivation resets created_at to now and absolute_expiry_hours to 48,
+// so the new absolute deadline = current time + 48 hours.
 if (isset($_POST['reactivate_id'])) {
     $rid = (int)$_POST['reactivate_id'];
-    $link = DB::prepare("SELECT created_at, absolute_expiry_hours FROM links WHERE id=:id");
-    $link->execute([':id'=>$rid]);
-    $link = $link->fetch();
-    if ($link && time() <= strtotime($link['created_at']) + (int)$link['absolute_expiry_hours'] * 3600) {
-        DB::prepare("UPDATE links SET status='active', first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=2, expire_on_submit=0 WHERE id=:id")
-           ->execute([':id'=>$rid]);
-        DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'reactivate', '链接被重新打开', datetime('now','localtime'))")
-           ->execute([':id'=>$rid]);
-    }
+    DB::prepare("UPDATE links SET status='active', created_at=datetime('now','localtime'), absolute_expiry_hours=48, first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=2, expire_on_submit=0 WHERE id=:id")
+       ->execute([':id'=>$rid]);
+    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'reactivate', '链接被重新打开（绝对过期顺延48小时）', datetime('now','localtime'))")
+       ->execute([':id'=>$rid]);
     header('Location: links.php?edited=1');
     exit;
 }
@@ -174,12 +171,11 @@ adminHeader('链接列表', 'links');
                 <?php if ($row['status'] === 'expired'): ?>
                     <?php if ($isAbsolutelyExpired): ?>
                     <span class="badge" style="background:#eee;color:#999;font-size:10px;">永久过期</span>
-                    <?php else: ?>
-                    <form method="post" onsubmit="return confirm('确定重新打开此链接？')">
+                    <?php endif; ?>
+                    <form method="post" onsubmit="return confirm('<?= $isAbsolutelyExpired ? '此链接已永久过期，重开后绝对过期时间将顺延48小时，确定重新打开？' : '确定重新打开此链接？' ?>')">
                         <input type="hidden" name="reactivate_id" value="<?= $row['id'] ?>">
                         <button type="submit" class="btn btn-sm btn-primary" style="background:#27ae60;">🔄 重开</button>
                     </form>
-                    <?php endif; ?>
                 <?php else: ?>
                     <form method="post" onsubmit="return confirm('确定将此链接置为已过期？')">
                         <input type="hidden" name="expire_id" value="<?= $row['id'] ?>">
