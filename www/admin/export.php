@@ -91,6 +91,16 @@ $logStmt = DB::prepare("
 $logStmt->execute($linkIds);
 $logs = $logStmt->fetchAll();
 
+// 没有任何提交数据时，不生成空表头 CSV
+if (empty($logs)) {
+    adminHeader('导出数据', 'links');
+    echo '<h1 class="page-title">📥 导出数据</h1>';
+    echo '<div class="alert alert-error">查询范围内没有已提交的数据可导出。</div>';
+    echo '<a href="links.php" class="btn btn-outline">← 返回链接列表</a>';
+    adminFooter();
+    exit;
+}
+
 // ── Build CSV ──
 $fieldNamesOrdered = array_keys($allFieldNames);
 $exportTime = date('Y-m-d H:i:s');
@@ -123,13 +133,25 @@ fputcsv($output, $headerNames);
 // Write rows
 foreach ($logs as $log) {
     $formData = json_decode($log['form_data'], true) ?: [];
+    // 收集该记录各字段的取值
+    $fieldValues = [];
+    foreach ($fieldNamesOrdered as $fn) {
+        $fieldValues[$fn] = is_array($formData) ? ($formData[$fn] ?? '') : '';
+    }
+    // 若所有字段名对应的值都为空，则跳过该记录不导出
+    $hasAnyValue = false;
+    foreach ($fieldValues as $v) {
+        if ($v !== '' && $v !== null && $v !== []) { $hasAnyValue = true; break; }
+    }
+    if (!$hasAnyValue) continue;
+
     $row = [
         $log['campaign_name'],
         $log['link_id'],
         $log['token'],
     ];
     foreach ($fieldNamesOrdered as $fn) {
-        $row[] = $formData[$fn] ?? '';
+        $row[] = $fieldValues[$fn];
     }
     $row[] = $log['accessed_at'];
     $row[] = $exportTime;

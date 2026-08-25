@@ -10,6 +10,38 @@ $db = getDB();
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ── Database backup / restore management (SQLite only) ──
+    if (isset($_POST['backup_action'])) {
+        $backupDir = dirname(DB_PATH) . '/backups';
+        if (DB_DRIVER !== 'sqlite') {
+            $message = '❌ 当前为 MySQL 模式，备份请使用数据库导出工具（mysqldump 等）。';
+        } elseif (!is_dir($backupDir)) {
+            @mkdir($backupDir, 0755, true);
+        }
+
+        if ($_POST['backup_action'] === 'create' && DB_DRIVER === 'sqlite') {
+            // 强制 checkpoint，确保 WAL 中已提交的数据合并回主库后再复制
+            try { $db->exec("PRAGMA wal_checkpoint(TRUNCATE)"); } catch (Throwable $e) {}
+            $dest = $backupDir . '/app_' . date('Ymd_His') . '.db';
+            if (copy(DB_PATH, $dest)) {
+                $message = '✅ 备份已创建：' . basename($dest);
+            } else {
+                $message = '❌ 备份失败，请检查备份目录写入权限。';
+            }
+        } elseif ($_POST['backup_action'] === 'delete' && DB_DRIVER === 'sqlite') {
+            $file = basename((string)($_POST['backup_file'] ?? '')); // basename 防路径穿越
+            if ($file === '' || !preg_match('/^app_\d{14}\.db$/', $file)) {
+                $message = '❌ 非法的备份文件名。';
+            } elseif (!is_file($backupDir . '/' . $file)) {
+                $message = '❌ 备份文件不存在。';
+            } elseif (@unlink($backupDir . '/' . $file)) {
+                $message = '✅ 已删除备份：' . $file;
+            } else {
+                $message = '❌ 删除失败。';
+            }
+        }
+    }
+
     // Password change (handled first, returns its own message)
     if (isset($_POST['change_password'])) {
         $oldPass = $_POST['old_password'] ?? '';
@@ -103,9 +135,58 @@ adminHeader('系统设置', 'settings');
     <div class="card-header">📊 数据库信息</div>
     <table class="kv-table">
         <tr><td>数据库路径</td><td><code><?= htmlspecialchars(DB_PATH) ?></code></td></tr>
+        <tr><td>数据库类型</td><td><?= DB_DRIVER === 'mysql' ? 'MySQL' : 'SQLite' ?></td></tr>
         <tr><td>链接总数</td><td><?= DB::query("SELECT COUNT(*) FROM links")->fetchColumn() ?></td></tr>
         <tr><td>日志总数</td><td><?= DB::query("SELECT COUNT(*) FROM access_logs")->fetchColumn() ?></td></tr>
     </table>
 </div>
+
+<?php if (DB_DRIVER === 'sqlite'): ?>
+<?php $backupDir = dirname(DB_PATH) . '/backups'; ?>
+<div class="card main-shell">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>💾 数据库备份 (SQLite)</span>
+        <form method="post" style="margin:0;">
+            <input type="hidden" name="backup_action" value="create">
+            <button type="submit" class="btn btn-sm btn-primary">＋ 立即备份</button>
+        </form>
+    </div>
+    <p class="section-meta">备份文件保存在备份目录 <code><?= htmlspecialchars($backupDir) ?></code>,文件名按时间生成,可删除。</p>
+    <?php
+    $backups = [];
+    if (is_dir($backupDir)) {
+        foreach (glob($backupDir . '/app_*.db') ?: [] as $f) {
+            $backups[] = ['file' => basename($f), 'size' => filesize($f), 'mtime' => filemtime($f)];
+        }
+        usort($backups, fn($a, $b) => $b['mtime'] <=> $a['mtime']);
+    }
+    ?>
+    <?php if (empty($backups)): ?>
+        <div class="alert alert-info" style="margin-bottom:0;">暂无备份。</div>
+    <?php else: ?>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>备份文件</th><th>大小</th><th>备份时间</th><th>操作</th></tr></thead>
+            <tbody>
+            <?php foreach ($backups as $b): ?>
+            <tr>
+                <td><code style="font-size:12px;"><?= htmlspecialchars($b['file']) ?></code></td>
+                <td><?= number_format($b['size'] / 1024, 1) ?> KB</td>
+                <td><?= date('Y-m-d H:i:s', $b['mtime']) ?></td>
+                <td>
+                    <form method="post" onsubmit="return confirm('确定删除备份 <?= htmlspecialchars($b['file']) ?>？此操作不可恢复。')">
+                        <input type="hidden" name="backup_action" value="delete">
+                        <input type="hidden" name="backup_file" value="<?= htmlspecialchars($b['file']) ?>">
+                        <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                    </form>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <?php adminFooter(); ?>
