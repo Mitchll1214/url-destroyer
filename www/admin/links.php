@@ -30,8 +30,8 @@ if (isset($_POST['reactivate_id'])) {
     $newAbsExpiryHours = $hoursSinceCreation + 48;
     DB::prepare("UPDATE links SET status='active', absolute_expiry_hours=:abs, first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=2, expire_on_submit=0 WHERE id=:id")
        ->execute([':abs' => $newAbsExpiryHours, ':id' => $rid]);
-    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'reactivate', '链接被重新打开（绝对过期顺延48小时）', datetime('now','localtime'))")
-       ->execute([':id' => $rid]);
+    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', :act, :note, datetime('now','localtime'))")
+       ->execute([':id' => $rid, ':act' => (currentAdmin() ?: 'admin') . ':reactivate', ':note' => '管理员重新打开链接（绝对过期顺延48小时）']);
     header('Location: links.php?edited=1');
     exit;
 }
@@ -41,8 +41,8 @@ if (isset($_POST['expire_id'])) {
     $eid = (int)$_POST['expire_id'];
     DB::prepare("UPDATE links SET status='expired', expires_at=datetime('now','localtime') WHERE id=:id")
        ->execute([':id'=>$eid]);
-    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', 'force_expire', '管理员置为已过期', datetime('now','localtime'))")
-       ->execute([':id'=>$eid]);
+    DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', :act, '管理员置为已过期', datetime('now','localtime'))")
+       ->execute([':id' => $eid, ':act' => (currentAdmin() ?: 'admin') . ':force_expire']);
     header('Location: links.php?edited=1');
     exit;
 }

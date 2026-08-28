@@ -11,6 +11,7 @@ define('T_ACCESS_LOGS',    DB_TABLE_PREFIX . 'access_logs');
 define('T_SETTINGS',       DB_TABLE_PREFIX . 'settings');
 define('T_LOGIN_ATTEMPTS', DB_TABLE_PREFIX . 'login_attempts');
 define('T_FORM_DRAFTS',    DB_TABLE_PREFIX . 'form_drafts');
+define('T_ADMINS',         DB_TABLE_PREFIX . 'admins');
 
 // ─── Helper functions for driver-specific SQL expressions ───
 
@@ -100,7 +101,7 @@ class DB {
         // Step 1: Table prefix substitution
         $prefix = DB_TABLE_PREFIX;
         if ($prefix !== '') {
-            $tables = ['links', 'access_logs', 'settings', 'login_attempts', 'form_drafts'];
+            $tables = ['links', 'access_logs', 'settings', 'login_attempts', 'form_drafts', 'admins'];
             foreach ($tables as $table) {
                 $sql = preg_replace(
                     '/\b(FROM|JOIN|INTO|TABLE|UPDATE|REFERENCES|DELETE\s+FROM)\s+' . preg_quote($table, '/') . '\b/i',
@@ -197,6 +198,18 @@ function initSchemaSQLite(PDO $pdo): void {
         )
     ");
 
+    // Admins (multi-admin: username + password hash)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS " . T_ADMINS . " (
+            username      TEXT PRIMARY KEY,
+            password_hash TEXT NOT NULL,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+    ");
+    // Seed default admin (initial password comes from existing config)
+    $seed = $pdo->prepare("INSERT OR IGNORE INTO " . T_ADMINS . " (username, password_hash, created_at) VALUES ('admin', :hash, datetime('now', 'localtime'))");
+    $seed->execute([':hash' => password_hash(ADMIN_PASSWORD, PASSWORD_DEFAULT)]);
+
     // Default settings
     $stmt = $pdo->prepare("INSERT OR IGNORE INTO " . T_SETTINGS . " (key, value) VALUES (?, ?)");
     $stmt->execute(['default_access_timeout', DEFAULT_ACCESS_TIMEOUT]);
@@ -263,6 +276,18 @@ function initSchemaMySQL(PDO $pdo): void {
             updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ");
+
+    // Admins (multi-admin: username + password hash)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS " . T_ADMINS . " (
+            username      VARCHAR(64) PRIMARY KEY,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+    // Seed default admin (initial password comes from existing config)
+    $seed = $pdo->prepare("INSERT IGNORE INTO " . T_ADMINS . " (username, password_hash) VALUES ('admin', :hash)");
+    $seed->execute([':hash' => password_hash(ADMIN_PASSWORD, PASSWORD_DEFAULT)]);
 
     // Default settings
     $stmt = $pdo->prepare("INSERT IGNORE INTO " . T_SETTINGS . " (`key`, `value`) VALUES (?, ?)");

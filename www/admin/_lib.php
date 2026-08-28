@@ -12,10 +12,18 @@ function getClientIP(): string {
     return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 }
 
-function getAdminPassword(): string {
-    $db = getDB();
-    $stored = DB::query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn();
-    return $stored ?: ADMIN_PASSWORD;
+/** 返回当前已登录管理员用户名；未登录返回空串 */
+function currentAdmin(): string {
+    return isset($_SESSION['admin_logged_in']) && !empty($_SESSION['admin_user'])
+        ? $_SESSION['admin_user'] : '';
+}
+
+/** 校验账号+密码（admins 表，password_hash） */
+function authenticateAdmin(string $username, string $password): bool {
+    $stmt = DB::prepare("SELECT username, password_hash FROM admins WHERE username = :u LIMIT 1");
+    $stmt->execute([':u' => $username]);
+    $row = $stmt->fetch();
+    return $row !== false && password_verify($password, $row['password_hash']);
 }
 
 function requireLogin(): void {
@@ -52,18 +60,22 @@ function requireLogin(): void {
         }
     }
 
+    $username = trim($_POST['username'] ?? '');
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
         // Allow attempt only if not rate-limited
-        if ($failedCount < $maxAttempts) {
-            if (hash_equals(getAdminPassword(), $_POST['password'])) {
+        if ($failedCount < $maxAttempts && $username !== '') {
+            if (authenticateAdmin($username, $_POST['password'])) {
                 // Success: clear all attempts for this IP
                 DB::prepare("DELETE FROM login_attempts WHERE ip = :ip")->execute([':ip' => $ip]);
                 $_SESSION['admin_logged_in'] = true;
+                $_SESSION['admin_user'] = $username;
                 return;
             }
             // Record failed attempt
             DB::prepare("INSERT INTO login_attempts (ip) VALUES (:ip)")->execute([':ip' => $ip]);
-            $GLOBALS['login_error'] = '密码错误';
+            $GLOBALS['login_error'] = '账号或密码错误';
+        } elseif ($username === '' && isset($_POST['password'])) {
+            $GLOBALS['login_error'] = '请输入账号';
         }
     }
 
@@ -100,8 +112,12 @@ function showLogin(): void {
         <?php endif; ?>
         <form method="post">
             <div class="form-group">
+                <label>管理员账号</label>
+                <input type="text" name="username" required autofocus placeholder="请输入账号" autocomplete="username">
+            </div>
+            <div class="form-group">
                 <label>管理员密码</label>
-                <input type="password" name="password" required autofocus placeholder="请输入密码">
+                <input type="password" name="password" required placeholder="请输入密码" autocomplete="current-password">
             </div>
             <button type="submit" class="btn btn-primary">🚀 登 录</button>
         </form>
@@ -135,7 +151,7 @@ function adminHeader(string $title, string $activeNav = 'dashboard'): void {
                 <div class="user-info">
                     <div class="user-avatar">👤</div>
                     <div>
-                        <div class="user-name">管理员</div>
+                        <div class="user-name"><?= htmlspecialchars(currentAdmin() ?: '管理员') ?></div>
                         <div class="user-role">后台控制台</div>
                     </div>
                 </div>

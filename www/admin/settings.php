@@ -42,21 +42,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Password change (handled first, returns its own message)
-    if (isset($_POST['change_password'])) {
-        $oldPass = $_POST['old_password'] ?? '';
-        $newPass = $_POST['new_password'] ?? '';
-        $confirm = $_POST['confirm_password'] ?? '';
-        $currentPw = DB::query("SELECT value FROM settings WHERE key='admin_password'")->fetchColumn() ?: ADMIN_PASSWORD;
-        if ($oldPass !== $currentPw) {
-            $message = '❌ 当前密码错误';
-        } elseif (strlen($newPass) < 4) {
-            $message = '❌ 新密码至少4位';
-        } elseif ($newPass !== $confirm) {
-            $message = '❌ 两次输入的新密码不一致';
-        } else {
-            DB::prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', :v)")->execute([':v' => $newPass]);
-            $message = '✅ 密码已修改，下次登录生效';
+    // ── Admin account management (multi-admin) ──
+    if (isset($_POST['account_action'])) {
+        $action = $_POST['account_action'];
+        $accUser = trim($_POST['acc_username'] ?? '');
+        $accNew  = $_POST['acc_password'] ?? '';
+
+        if ($action === 'add') {
+            if ($accUser === '' || strlen($accNew) < 4) {
+                $message = '❌ 账号不能为空，密码至少 4 位。';
+            } else {
+                $exists = DB::prepare("SELECT COUNT(*) FROM admins WHERE username = :u");
+                $exists->execute([':u' => $accUser]);
+                if ((int)$exists->fetchColumn() > 0) {
+                    $message = '❌ 账号已存在：' . htmlspecialchars($accUser);
+                } else {
+                    DB::prepare("INSERT INTO admins (username, password_hash, created_at) VALUES (:u, :h, datetime('now','localtime'))")
+                       ->execute([':u' => $accUser, ':h' => password_hash($accNew, PASSWORD_DEFAULT)]);
+                    $message = '✅ 已新增账号：' . htmlspecialchars($accUser);
+                }
+            }
+        } elseif ($action === 'delete') {
+            if ($accUser === '') {
+                $message = '❌ 缺少账号。';
+            } elseif ($accUser === currentAdmin()) {
+                $message = '❌ 不能删除当前登录的账号。';
+            } else {
+                DB::prepare("DELETE FROM admins WHERE username = :u")->execute([':u' => $accUser]);
+                $message = '✅ 已删除账号：' . htmlspecialchars($accUser);
+            }
+        } elseif ($action === 'password') {
+            if ($accUser === '' || strlen($accNew) < 4) {
+                $message = '❌ 账号不能为空，新密码至少 4 位。';
+            } else {
+                DB::prepare("UPDATE admins SET password_hash = :h WHERE username = :u")->execute([':h' => password_hash($accNew, PASSWORD_DEFAULT), ':u' => $accUser]);
+                $message = '✅ 已更新账号密码：' . htmlspecialchars($accUser);
+            }
         }
     }
 
@@ -75,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            ->execute([':v' => $expiry]);
     }
 
-    if (!isset($_POST['change_password']) && !isset($message)) {
+    if (!isset($_POST['account_action']) && !isset($_POST['backup_action']) && !isset($message)) {
         $message = '✅ 设置已保存';
     }
 }
@@ -116,19 +137,50 @@ adminHeader('系统设置', 'settings');
 </div>
 
 <div class="card main-shell">
-    <div class="card-header">🔑 修改管理员密码</div>
-    <p class="section-meta">修改后即时生效。初始密码来源：环境变量 <code>ADMIN_PASSWORD</code> > 默认值 <code><?= htmlspecialchars(ADMIN_PASSWORD) ?></code><br>💡 在 Docker 中设置 <code>ADMIN_PASSWORD</code> 环境变量可永久固定初始密码。</p>
-    <form method="post">
-        <input type="hidden" name="change_password" value="1">
+    <div class="card-header">👥 管理员账号管理</div>
+    <p class="section-meta">所有管理员权限相同。当前管理员：<strong><?= htmlspecialchars(currentAdmin()) ?></strong></p>
+
+    <!-- 新增账号 -->
+    <form method="post" style="margin-bottom:18px;">
+        <input type="hidden" name="account_action" value="add">
         <div class="form-row">
-            <div class="form-group"><label>当前密码</label><input type="text" name="old_password" required></div>
+            <div class="form-group"><label>新账号</label><input type="text" name="acc_username" required placeholder="登录账号" maxlength="64"></div>
+            <div class="form-group"><label>密码</label><input type="password" name="acc_password" required minlength="4" placeholder="至少 4 位"></div>
+            <div class="form-group" style="display:flex;align-items:flex-end;"><button type="submit" class="btn btn-primary">＋ 新增账号</button></div>
         </div>
-        <div class="form-row">
-            <div class="form-group"><label>新密码</label><input type="text" name="new_password" required minlength="4"></div>
-            <div class="form-group"><label>确认新密码</label><input type="text" name="confirm_password" required minlength="4"></div>
-        </div>
-        <button type="submit" class="btn btn-primary">🔒 修改密码</button>
     </form>
+
+    <?php $admins = DB::query("SELECT username, created_at FROM admins ORDER BY username")->fetchAll(); ?>
+    <div class="table-wrap">
+    <table>
+        <thead><tr><th>账号</th><th>创建时间</th><th>操作</th></tr></thead>
+        <tbody>
+        <?php foreach ($admins as $a): $isSelf = ($a['username'] === currentAdmin()); ?>
+        <tr>
+            <td><strong><?= htmlspecialchars($a['username']) ?></strong><?= $isSelf ? ' <span class="badge badge-active" style="padding:2px 8px;">当前</span>' : '' ?></td>
+            <td><?= htmlspecialchars($a['created_at']) ?></td>
+            <td>
+                <div class="table-actions">
+                    <form method="post" onsubmit="var p=prompt('为账号 [<?= htmlspecialchars($a['username']) ?>] 设置新密码（至少4位）：');if(!p){return false;}this.acc_password.value=p;return true;">
+                        <input type="hidden" name="account_action" value="password">
+                        <input type="hidden" name="acc_username" value="<?= htmlspecialchars($a['username']) ?>">
+                        <input type="hidden" name="acc_password" value="">
+                        <button type="submit" class="btn btn-sm btn-outline">改密</button>
+                    </form>
+                    <?php if (!$isSelf): ?>
+                    <form method="post" onsubmit="return confirm('确定删除账号 [<?= htmlspecialchars($a['username']) ?>]？')">
+                        <input type="hidden" name="account_action" value="delete">
+                        <input type="hidden" name="acc_username" value="<?= htmlspecialchars($a['username']) ?>">
+                        <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    </div>
 </div>
 
 <div class="card main-shell">
