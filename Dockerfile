@@ -18,7 +18,7 @@ RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
 RUN a2enmod rewrite
 
 # Install SQLite3 + MySQL PHP extensions
-RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev default-mysql-client libmariadb-dev \
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y sqlite3 libsqlite3-dev default-mysql-client libmariadb-dev \
     && docker-php-ext-install pdo_sqlite pdo_mysql \
     && rm -rf /var/lib/apt/lists/*
 

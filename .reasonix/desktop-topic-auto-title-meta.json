@@ -1,14 +1,14 @@
 {
   "topic_20260630-063533_32d8663cb9b83fc4": {
-    "stage": 3,
-    "userTurns": 3,
     "basisHash": "46905af045643dee",
-    "updatedAt": 1783847540664
+    "stage": 3,
+    "updatedAt": 1783847540664,
+    "userTurns": 3
   },
   "topic_20260821-022621_fc841d4dfe4a114d": {
-    "stage": 3,
-    "userTurns": 3,
     "basisHash": "9d9b2d38165cf089",
-    "updatedAt": 1787280759910
+    "stage": 3,
+    "updatedAt": 1787280759910,
+    "userTurns": 3
   }
 }

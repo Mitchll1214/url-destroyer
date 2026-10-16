@@ -9,11 +9,16 @@ requireLogin();
 
 $db = getDB();
 
-// ── Collect filters from query string ──
-$statusFilter = $_GET['status'] ?? '';
-$searchCampaign = trim($_GET['campaign'] ?? '');
-$dateFrom = $_GET['date_from'] ?? '';
-$dateTo   = $_GET['date_to'] ?? '';
+// ── Collect filters from request ──
+$statusFilter = $_POST['status'] ?? $_GET['status'] ?? '';
+$searchCampaign = trim($_POST['campaign'] ?? $_GET['campaign'] ?? '');
+$dateFrom = $_POST['date_from'] ?? $_GET['date_from'] ?? '';
+$dateTo   = $_POST['date_to'] ?? $_GET['date_to'] ?? '';
+
+$exportIds = [];
+if (!empty($_POST['ids']) && is_array($_POST['ids'])) {
+    $exportIds = array_values(array_unique(array_map('intval', $_POST['ids'])));
+}
 
 // ── Build query: match links by campaign/date filters only ──
 // 导出忽略状态筛选：只要满足活动/日期条件且存在提交数据（access_logs.form_data 非空）即导出，
@@ -21,17 +26,22 @@ $dateTo   = $_GET['date_to'] ?? '';
 $where = [];
 $params = [];
 
-if ($searchCampaign !== '') {
-    $where[] = "campaign_name LIKE :campaign";
-    $params[':campaign'] = '%' . $searchCampaign . '%';
-}
-if ($dateFrom !== '') {
-    $where[] = "created_at >= :date_from";
-    $params[':date_from'] = $dateFrom . ' 00:00:00';
-}
-if ($dateTo !== '') {
-    $where[] = "created_at <= :date_to";
-    $params[':date_to'] = $dateTo . ' 23:59:59';
+if ($exportIds) {
+    $where[] = "id IN (" . implode(',', array_fill(0, count($exportIds), '?')) . ")";
+    $params = $exportIds;
+} else {
+    if ($searchCampaign !== '') {
+        $where[] = "campaign_name LIKE :campaign";
+        $params[':campaign'] = '%' . $searchCampaign . '%';
+    }
+    if ($dateFrom !== '') {
+        $where[] = "created_at >= :date_from";
+        $params[':date_from'] = $dateFrom . ' 00:00:00';
+    }
+    if ($dateTo !== '') {
+        $where[] = "created_at <= :date_to";
+        $params[':date_to'] = $dateTo . ' 23:59:59';
+    }
 }
 
 $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';

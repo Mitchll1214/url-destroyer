@@ -16,6 +16,15 @@ if (isset($_POST['delete_id'])) {
     exit;
 }
 
+if (isset($_POST['bulk_delete']) && !empty($_POST['ids']) && is_array($_POST['ids'])) {
+    $delStmt = DB::prepare("DELETE FROM links WHERE id = :id");
+    foreach ($_POST['ids'] as $bulkId) {
+        $delStmt->execute([':id' => (int)$bulkId]);
+    }
+    header('Location: links.php?deleted=1');
+    exit;
+}
+
 // Handle reactivate (expired → active) — supports permanently expired links too.
 // Keeps the original created_at (so creation-date filtering stays intact); to make
 // the new absolute deadline = now + 48h, absolute_expiry_hours is raised dynamically
@@ -120,7 +129,7 @@ adminHeader('链接列表', 'links');
         <div class="filter-group"><label>至</label><input type="date" name="date_to" value="<?= htmlspecialchars($dateTo) ?>"></div>
         <button type="submit" class="btn btn-sm btn-primary">🔍 查询</button>
         <a href="links.php" class="btn btn-sm btn-outline">重置</a>
-        <a href="export.php?<?= http_build_query(array_filter(['status'=>$statusFilter, 'campaign'=>$searchCampaign, 'date_from'=>$dateFrom, 'date_to'=>$dateTo])) ?>" class="btn btn-sm btn-primary" style="margin-left:auto;background:#27ae60;">📥 导出CSV</a>
+        <button type="submit" form="bulkForm" formaction="export.php" class="btn btn-sm btn-primary" style="margin-left:auto;background:#27ae60;">📥 导出CSV</button>
     </form>
     <div class="toolbar-row">
         <div class="chip-group">
@@ -132,11 +141,20 @@ adminHeader('链接列表', 'links');
             <a href="links.php?status=expired" class="btn btn-sm <?= $statusFilter==='expired' ? 'btn-primary' : 'btn-outline' ?>">已过期</a>
         </div>
         <span class="text-muted">共 <?= $total ?> 条</span>
+        <form method="post" id="bulkForm" action="links.php" style="margin-left:auto;">
+            <input type="hidden" name="bulk_delete" value="1">
+            <input type="hidden" name="status" value="<?= htmlspecialchars($statusFilter) ?>">
+            <input type="hidden" name="campaign" value="<?= htmlspecialchars($searchCampaign) ?>">
+            <input type="hidden" name="date_from" value="<?= htmlspecialchars($dateFrom) ?>">
+            <input type="hidden" name="date_to" value="<?= htmlspecialchars($dateTo) ?>">
+            <button type="submit" class="btn btn-sm btn-danger" id="bulkDeleteBtn" disabled onclick="return confirmBulkDelete();">🗑 删除选中 (<span id="bulkCount">0</span>)</button>
+        </form>
     </div>
 
     <div class="table-wrap">
     <table>
         <thead><tr>
+            <th style="width:28px;"><input type="checkbox" id="selectAll" title="全选"></th>
             <th>编号</th><th>活动</th><th>Token</th><th>状态</th><th>访问</th><th>超时</th><th>创建时间</th><th>首次访问</th><th>过期时间</th><th>操作</th>
         </tr></thead>
         <tbody>
@@ -157,6 +175,7 @@ adminHeader('链接列表', 'links');
             $isAbsolutelyExpired = (time() > $absDeadline);
         ?>
         <tr>
+            <td><input type="checkbox" class="row-check" form="bulkForm" name="ids[]" value="<?= $row['id'] ?>"></td>
             <td><?= $num ?></td>
             <td><?= htmlspecialchars($row['campaign_name'] ?: '-') ?></td>
             <td>
@@ -235,6 +254,36 @@ adminHeader('链接列表', 'links');
 </div>
 
 <script>
+function confirmBulkDelete(){
+    var n = document.querySelectorAll('.row-check:checked').length;
+    if (n === 0) return false;
+    return confirm('确定删除选中的 ' + n + ' 条链接及所有访问记录？此操作不可撤销。');
+}
+(function(){
+    var form = document.getElementById('bulkForm');
+    if (!form) return;
+    var selectAll = document.getElementById('selectAll');
+    var btn = document.getElementById('bulkDeleteBtn');
+    var countEl = document.getElementById('bulkCount');
+    function rowChecks(){ return Array.prototype.slice.call(document.querySelectorAll('.row-check')); }
+    function sync(){
+        var checks = rowChecks();
+        var checked = checks.filter(function(c){ return c.checked; });
+        if (countEl) countEl.textContent = checked.length;
+        if (btn) btn.disabled = checked.length === 0;
+        if (selectAll) {
+            selectAll.checked = checks.length > 0 && checked.length === checks.length;
+            selectAll.indeterminate = checked.length > 0 && checked.length < checks.length;
+        }
+    }
+    if (selectAll) selectAll.addEventListener('change', function(){
+        rowChecks().forEach(function(c){ c.checked = selectAll.checked; });
+        sync();
+    });
+    rowChecks().forEach(function(c){ c.addEventListener('change', sync); });
+    sync();
+})();
+
 // 每页条数下拉：切换即跳转到对应筛选+条数的列表页
 (function(){
     var sel = document.getElementById('perPageSelect');
