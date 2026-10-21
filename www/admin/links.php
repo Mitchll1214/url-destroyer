@@ -37,7 +37,7 @@ if (isset($_POST['reactivate_id'])) {
     $createdTs = $row ? strtotime((string)$row['created_at']) : 0;
     $hoursSinceCreation = $createdTs > 0 ? max(0, ceil((time() - $createdTs) / 3600)) : 0;
     $newAbsExpiryHours = $hoursSinceCreation + 48;
-    DB::prepare("UPDATE links SET status='active', absolute_expiry_hours=:abs, first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=2, expire_on_submit=0 WHERE id=:id")
+    DB::prepare("UPDATE links SET status='active', absolute_expiry_hours=:abs, first_accessed_at=NULL, expires_at=NULL, access_count=0, max_accesses=5, expire_on_submit=0 WHERE id=:id")
        ->execute([':abs' => $newAbsExpiryHours, ':id' => $rid]);
     DB::prepare("INSERT INTO access_logs (link_id, ip, user_agent, form_data, accessed_at) VALUES (:id, '管理员', :act, :note, datetime('now','localtime'))")
        ->execute([':id' => $rid, ':act' => (currentAdmin() ?: 'admin') . ':reactivate', ':note' => '管理员重新打开链接（绝对过期顺延48小时）']);
