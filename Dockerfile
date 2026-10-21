@@ -1,5 +1,6 @@
-# ── 国内镜像：通过 DaoCloud 代理拉取 Docker Hub 基础镜像 ──
-FROM docker.m.daocloud.io/library/php:8.2-apache
+# ── 基础镜像：默认走国内 DaoCloud 代理，CI 可通过 build-arg 覆盖 ──
+ARG PHP_IMAGE=docker.m.daocloud.io/library/php:8.2-apache
+FROM ${PHP_IMAGE}
 
 # ── 时区设为北京时间 ──
 ENV TZ=Asia/Shanghai
