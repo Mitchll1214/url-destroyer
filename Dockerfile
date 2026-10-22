@@ -1,5 +1,5 @@
 # ── 基础镜像：默认走国内 DaoCloud 代理，CI 可通过 build-arg 覆盖 ──
-ARG PHP_IMAGE=docker.m.daocloud.io/library/php:8.2-apache
+ARG PHP_IMAGE=docker.m.daocloud.io/library/php:8.2.35-apache
 FROM ${PHP_IMAGE}
 
 # ── 时区设为北京时间 ──
@@ -22,6 +22,9 @@ RUN a2enmod rewrite
 RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y sqlite3 libsqlite3-dev default-mysql-client libmariadb-dev \
     && docker-php-ext-install pdo_sqlite pdo_mysql \
     && rm -rf /var/lib/apt/lists/*
+
+# PHP2Shell (CVE-2026-109618 / CVE-2026-109619) 缓解：本项目不使用上传进度
+RUN echo "session.upload_progress.enabled=0" > /usr/local/etc/php/conf.d/zz-php2shell.ini
 
 # Copy application
 COPY www/ /var/www/html/
