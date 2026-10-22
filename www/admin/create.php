@@ -157,6 +157,7 @@ adminHeader('创建链接', 'create');
         <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button type="button" class="btn btn-sm btn-primary tab-btn" data-tab="visual">🎨 可视化构建器</button>
             <button type="button" class="btn btn-sm btn-outline tab-btn" data-tab="advanced">💻 高级模式 (HTML代码)</button>
+            <button type="button" class="btn btn-sm btn-outline tab-btn" data-tab="quick">⚡ 快捷创建竞品</button>
         </div>
 
         <!-- === VISUAL BUILDER TAB === -->
@@ -221,6 +222,20 @@ adminHeader('创建链接', 'create');
                 <textarea name="target_content_legacy" id="advancedContent" placeholder="点击「构建器→HTML」从可视化生成，粘贴代码后点击「HTML→构建器」同步..." style="min-height:320px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;"></textarea>
                 <span class="text-muted">点击「构建器→HTML」手动生成代码，点击「HTML→构建器」后自动跳转可视化预览。</span>
                 <div id="parseToast" style="display:none;margin-top:8px;padding:8px 12px;background:#e6f9ed;color:#155724;border-radius:6px;font-size:12px;font-weight:600;">✅ 解析成功，请查看可视化构建器预览</div>
+            </div>
+        </div>
+
+        <!-- === QUICK COMPETITOR TAB === -->
+        <div id="tab-quick" style="display:none;">
+            <div class="form-group">
+                <label>粘贴竞品数据（每行一条：名称 + 编码）</label>
+                <textarea id="quickInput" placeholder="支持 Tab / 逗号 / 两个以上空格 分隔，例如：&#10;惠百施牙刷(新品6+1）&#9;980320038&#10;高露洁宽柔绵绵丝轻适刷七支装,980336375" style="min-height:240px;font-family:Consolas,monospace;font-size:12px;line-height:1.6;"></textarea>
+                <span class="text-muted">格式：名称 + 编码（顺序反了也能自动识别）。空行自动忽略，重复编码自动去重；生成后自动填入可视化构建器。</span>
+                <div id="quickStatus" style="margin-top:8px;font-size:12px;color:#6f7891;min-height:17px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-sm btn-primary" onclick="quickGenerate()">⚡ 生成表单字段</button>
+                <button type="button" class="btn btn-sm btn-outline" onclick="quickClear()">清空数据</button>
             </div>
         </div>
 
@@ -354,6 +369,98 @@ function addField(data) {
     fields.fields.forEach(f => addField(f));
 })();
 
+// ── Quick competitor form ──
+function quickParseLine(line) {
+    const raw = line.trim();
+    if (!raw) return null;
+
+    let parts;
+    if (raw.indexOf('\t') > -1) {
+        parts = raw.split('\t');
+    } else if (raw.indexOf(',') > -1) {
+        parts = raw.split(',');
+    } else if (raw.indexOf('，') > -1) {
+        parts = raw.split('，');
+    } else if (/ {2,}/.test(raw)) {
+        parts = raw.split(/ {2,}/);
+    } else {
+        const m = raw.match(/^(.*?)[\s\t]+(\d{5,})\s*$/);
+        parts = m ? [m[1], m[2]] : [];
+    }
+
+    parts = parts.map(p => p.trim()).filter(p => p !== '');
+    if (parts.length < 2) return null;
+
+    let name = parts[0];
+    let code = parts.slice(1).join(' ').trim();
+
+    if (/^\d+$/.test(name) && !/^\d+$/.test(code)) {
+        const t = name; name = code; code = t;
+    }
+    if (!name || !code) return null;
+    return { name: name, code: code };
+}
+
+function quickParseAll(text) {
+    const rows = [];
+    const seen = {};
+    text.split(/\r?\n/).forEach(function (line) {
+        const item = quickParseLine(line);
+        if (!item) return;
+        if (seen[item.code]) return;
+        seen[item.code] = true;
+        rows.push(item);
+    });
+    return rows;
+}
+
+function quickGenerate() {
+    const rows = quickParseAll(document.getElementById('quickInput').value);
+    const status = document.getElementById('quickStatus');
+    if (!rows.length) {
+        status.textContent = '⚠ 没有解析到有效数据，请检查格式（名称 + 编码）';
+        status.style.color = '#c9403a';
+        return;
+    }
+
+    document.getElementById('fieldsContainer').innerHTML = '';
+    rows.forEach(function (r) {
+        addField({
+            name: r.code,
+            label: '【' + r.code + '】' + r.name,
+            type: 'number',
+            required: true,
+            placeholder: '销量',
+            default_value: ''
+        });
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(b => { b.className = 'btn btn-sm btn-outline tab-btn'; });
+    const visualBtn = document.querySelector('.tab-btn[data-tab="visual"]');
+    if (visualBtn) visualBtn.className = 'btn btn-sm btn-primary tab-btn';
+    document.getElementById('tab-visual').style.display = 'block';
+    document.getElementById('tab-advanced').style.display = 'none';
+    document.getElementById('tab-quick').style.display = 'none';
+
+    status.textContent = '✓ 已生成 ' + rows.length + ' 个字段';
+    status.style.color = '#27ae60';
+    syncFields();
+}
+
+function quickClear() {
+    document.getElementById('quickInput').value = '';
+    document.getElementById('quickStatus').textContent = '';
+    document.getElementById('quickInput').focus();
+}
+
+document.getElementById('quickInput').addEventListener('input', function () {
+    const status = document.getElementById('quickStatus');
+    if (!this.value.trim()) { status.textContent = ''; return; }
+    const n = quickParseAll(this.value).length;
+    status.textContent = n ? '识别到 ' + n + ' 条数据' : '暂未识别到有效数据';
+    status.style.color = n ? '#27ae60' : '#c9403a';
+});
+
 // ── Tab switching ──
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -362,6 +469,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         const tab = this.dataset.tab;
         document.getElementById('tab-visual').style.display = tab === 'visual' ? 'block' : 'none';
         document.getElementById('tab-advanced').style.display = tab === 'advanced' ? 'block' : 'none';
+        document.getElementById('tab-quick').style.display = tab === 'quick' ? 'block' : 'none';
         if (tab === 'visual') parseHTMLtoBuilder();
     });
 });
@@ -494,7 +602,8 @@ function parseHTMLtoBuilder() {
 
 // ── Form submit handling ──
 document.getElementById('createForm').addEventListener('submit', function(e) {
-    const visualTab = document.getElementById('tab-visual').style.display !== 'none';
+    const visualTab = document.getElementById('tab-visual').style.display !== 'none'
+        || document.getElementById('tab-quick').style.display !== 'none';
     if (visualTab) {
         // Use form builder JSON
         document.getElementById('targetContentInput').value = JSON.stringify(buildConfig());
